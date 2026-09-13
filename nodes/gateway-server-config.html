@@ -1,0 +1,118 @@
+<script type="text/x-red" data-template-name="gateway-server-config">
+    <div class="form-row">
+        <label for="node-config-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-config-input-name" placeholder="Central gateway">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-host"><i class="fa fa-globe"></i> Bind host</label>
+        <input type="text" id="node-config-input-host" placeholder="0.0.0.0">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-port"><i class="fa fa-plug"></i> WebSocket port</label>
+        <input type="number" id="node-config-input-port" min="1" max="65535">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-path"><i class="fa fa-link"></i> WebSocket path</label>
+        <input type="text" id="node-config-input-path" placeholder="/ws">
+    </div>
+    <hr>
+    <div class="form-row">
+        <label for="node-config-input-redisUrl"><i class="fa fa-database"></i> Redis URL</label>
+        <input type="text" id="node-config-input-redisUrl" placeholder="redis://127.0.0.1:6379">
+        <div class="form-tips" style="width:70%; max-width:none; margin-left:100px; box-sizing:border-box; white-space:normal; overflow-wrap:anywhere">Use <code>redis://host:6379</code> or <code>rediss://host:6379</code> for TLS. For a Redis TLS config with <code>host</code> <code>redis.example.com</code> and <code>tls-port</code> <code>6379</code>, enter <code>rediss://redis.example.com:6379</code>. The <code>tls-port</code> is represented by the <code>rediss://</code> scheme; do not add it separately.</div>
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-redisRejectUnauthorized"><i class="fa fa-shield"></i> Verify Redis TLS certificate</label>
+        <input type="checkbox" id="node-config-input-redisRejectUnauthorized" style="width:auto">
+        <div class="form-tips" style="width:70%; max-width:none; margin-left:100px; box-sizing:border-box; white-space:normal; overflow-wrap:anywhere">Leave enabled in production. If your Redis config contains <code>tls.rejectUnauthorized: false</code>, uncheck this option. Disable only when certificate verification is intentionally handled by another trusted layer.</div>
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-redisKeyPrefix"><i class="fa fa-key"></i> Redis key prefix</label>
+        <input type="text" id="node-config-input-redisKeyPrefix" placeholder="pod-gateway">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-redisConsumer"><i class="fa fa-user"></i> Redis consumer name</label>
+        <input type="text" id="node-config-input-redisConsumer" placeholder="auto: gateway node id">
+        <div class="form-tips" style="width:70%; max-width:none; margin-left:100px; box-sizing:border-box; white-space:normal; overflow-wrap:anywhere">Use one stable name for this Gateway instance. Leave empty to derive it from the config node id.</div>
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-redisMaxQueueSize"><i class="fa fa-list"></i> Max queue size</label>
+        <input type="number" id="node-config-input-redisMaxQueueSize" min="1">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-redisResultTtlSeconds"><i class="fa fa-hourglass-half"></i> Idempotency TTL (s)</label>
+        <input type="number" id="node-config-input-redisResultTtlSeconds" min="1">
+        <div class="form-tips" style="width:70%; max-width:none; margin-left:100px; box-sizing:border-box; white-space:normal; overflow-wrap:anywhere">How long Redis keeps idempotency claims, completed results and disconnected-POD results. Choose a value longer than the maximum time in which a duplicate request must be recognized.</div>
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-redisDeleteOnAck"><i class="fa fa-trash-o"></i> Delete processed Stream entries</label>
+        <input type="checkbox" id="node-config-input-redisDeleteOnAck" style="width:auto">
+        <div class="form-tips" style="width:70%; max-width:none; margin-left:100px; box-sizing:border-box; white-space:normal; overflow-wrap:anywhere">After <code>XACK</code>, remove the successfully processed entry with <code>XDEL</code>. Enabled by default to keep Redis memory bounded. Disable only for short-lived debugging retention.</div>
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-redisRetryPollMs"><i class="fa fa-clock-o"></i> Delayed retry poll (ms)</label>
+        <input type="number" id="node-config-input-redisRetryPollMs" min="10">
+        <div class="form-tips" style="width:70%; max-width:none; margin-left:100px; box-sizing:border-box; white-space:normal; overflow-wrap:anywhere">How often the gateway checks the durable delayed-retry sorted sets. Retries are stored once and promoted to a Stream only when due.</div>
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-rateLimits"><i class="fa fa-tachometer"></i> Rate limits JSON</label>
+        <textarea id="node-config-input-rateLimits" rows="5" placeholder='{"upstream":{"rate":50,"burst":1}}'></textarea>
+        <div class="form-tips" style="width:70%; max-width:none; margin-left:100px; box-sizing:border-box; white-space:normal; overflow-wrap:anywhere">You can configure a bucket for an exact operation such as <code>rider/getInfo</code>, for its <code>service</code> prefix such as <code>rider</code>, or for <code>default</code>. Matching order is exact operation → service → default. Example: <code>{&quot;rider/getInfo&quot;:{&quot;rate&quot;:20,&quot;burst&quot;:20},&quot;rider/update&quot;:{&quot;rate&quot;:1,&quot;burst&quot;:1}}</code> gives each API its own global Redis budget.</div>
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-concurrency"><i class="fa fa-tasks"></i> Concurrency</label>
+        <input type="number" id="node-config-input-concurrency" min="1">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-upstreamTimeoutMs"><i class="fa fa-clock-o"></i> Upstream timeout (ms)</label>
+        <input type="number" id="node-config-input-upstreamTimeoutMs" min="1">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-maxAttempts"><i class="fa fa-repeat"></i> Retry attempts</label>
+        <input type="number" id="node-config-input-maxAttempts" min="0">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-verboseLogging"><i class="fa fa-terminal"></i> Verbose console logging</label>
+        <input type="checkbox" id="node-config-input-verboseLogging" style="width:auto">
+        <div class="form-tips" style="width:70%; max-width:none; margin-left:100px; box-sizing:border-box; white-space:normal; overflow-wrap:anywhere">Development troubleshooting only. Logs request ids and lifecycle steps, never API keys or payloads.</div>
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-token"><i class="fa fa-lock"></i> Gateway token</label>
+        <input type="password" id="node-config-input-token">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="gateway-server-config">
+    <p>Server-side configuration for the one central POD Gateway instance.</p>
+    <p>Redis is configured here and is used for the durable queue and global rate limiter. Use this node only in the Node-RED instance that hosts the gateway.</p>
+    <p>POD flows use the separate <b>Gateway Config</b> node with only the gateway WebSocket URL.</p>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('gateway-server-config', {
+        category: 'config',
+        defaults: {
+            name: { value: '' },
+            host: { value: '0.0.0.0' },
+            port: { value: 8080, required: true, validate: RED.validators.number() },
+            path: { value: '/ws', required: true },
+            redisUrl: { value: 'redis://127.0.0.1:6379', required: true },
+            redisRejectUnauthorized: { value: true },
+            redisKeyPrefix: { value: 'pod-gateway', required: true },
+            redisConsumer: { value: '' },
+            redisMaxQueueSize: { value: 10000, validate: RED.validators.number() },
+            redisResultTtlSeconds: { value: 3600, validate: RED.validators.number() },
+            redisDeleteOnAck: { value: true },
+            redisRetryPollMs: { value: 250, validate: RED.validators.number() },
+            rateLimits: { value: '{"upstream":{"rate":50,"burst":1}}' },
+            concurrency: { value: 32, validate: RED.validators.number() },
+            upstreamTimeoutMs: { value: 60000, validate: RED.validators.number() },
+            maxAttempts: { value: 0, validate: RED.validators.number() },
+            verboseLogging: { value: false }
+        },
+        credentials: {
+            token: { type: 'password' }
+        },
+        label: function () { return this.name || `Gateway Server (${this.port})` }
+    })
+</script>

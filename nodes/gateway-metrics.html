@@ -1,0 +1,35 @@
+<script type="text/x-red" data-template-name="gateway-metrics">
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-server"></i> Gateway server</label>
+        <input type="text" id="node-input-server">
+    </div>
+    <div class="form-row">
+        <label for="node-input-events"><i class="fa fa-filter"></i> Event filter</label>
+        <input type="text" id="node-input-events" placeholder="All events, or request.completed, upstream.completed">
+        <div class="form-tips" style="width:70%; max-width:none; margin-left:100px; box-sizing:border-box; white-space:normal; overflow-wrap:anywhere">Leave empty to output every gateway metric event. Separate multiple events with commas.</div>
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="gateway-metrics">
+    <p>Outputs gateway lifecycle and latency events for an external metrics palette.</p>
+    <p>The node listens to the central <b>Gateway Server Config</b>. It does not call an API and does not expose an HTTP endpoint by itself.</p>
+    <p><code>msg.payload</code> contains the event metadata, including <code>timings.queueMs</code>, <code>timings.rateLimitMs</code>, <code>timings.upstreamMs</code>, <code>timings.deliveryMs</code> and <code>timings.totalMs</code> on <code>request.completed</code>.</p>
+    <p>No request payloads, headers or credentials are emitted.</p>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('gateway-metrics', {
+        category: 'POD Gateway',
+        color: '#c7e9c0',
+        defaults: {
+            name: { value: '' },
+            server: { type: 'gateway-server-config', required: true },
+            events: { value: '' }
+        },
+        inputs: 0,
+        outputs: 1,
+        icon: 'font-awesome/fa-line-chart',
+        label: function () { return this.name || 'Gateway Metrics' },
+        paletteLabel: 'Gateway Metrics'
+    })
+</script>

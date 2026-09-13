@@ -1,0 +1,55 @@
+[
+  {
+    "id": "central-gateway-tab",
+    "type": "tab",
+    "label": "POD Gateway · Central configuration",
+    "disabled": false,
+    "info": "Central Node-RED configuration. Keep API credentials here; POD flows only receive a WebSocket connector."
+  },
+  {
+    "id": "central-server-config",
+    "type": "gateway-server-config",
+    "name": "Central Gateway",
+    "host": "0.0.0.0",
+    "port": 8080,
+    "path": "/ws",
+    "redisUrl": "redis://127.0.0.1:6379",
+    "redisRejectUnauthorized": true,
+    "redisKeyPrefix": "pod-gateway",
+    "redisConsumer": "central-gateway",
+    "redisMaxQueueSize": 10000,
+    "redisResultTtlSeconds": 3600,
+    "redisDeleteOnAck": true,
+    "redisRetryPollMs": 250,
+    "rateLimits": "{\"upstream\":{\"rate\":50,\"burst\":1}}",
+    "concurrency": 32,
+    "upstreamTimeoutMs": 60000,
+    "maxAttempts": 0,
+    "verboseLogging": false,
+    "credentials": {}
+  },
+  {
+    "id": "upstream-api",
+    "type": "gateway-api-config",
+    "name": "External API",
+    "baseUrl": "https://api.example.com",
+    "headers": "{\"Accept\":\"application/json\"}",
+    "apiKeyHeader": "Authorization",
+    "apiKeyPrefix": "Bearer ",
+    "credentials": {}
+  },
+  {
+    "id": "upstream-adapter",
+    "type": "gateway-adapter",
+    "name": "External API request",
+    "server": "central-server-config",
+    "api": "upstream-api",
+    "operation": "upstream/request",
+    "label": "External API request",
+    "path": "/v1/resource",
+    "method": "GET",
+    "headers": "{}",
+    "idempotencyHeader": "",
+    "description": "Call an external API from the central Gateway."
+  }
+]

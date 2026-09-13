@@ -1,0 +1,50 @@
+<script type="text/x-red" data-template-name="gateway-api-config">
+    <div class="form-row">
+        <label for="node-config-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-config-input-name" placeholder="External API">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-baseUrl"><i class="fa fa-link"></i> Base URL</label>
+        <input type="text" id="node-config-input-baseUrl" placeholder="https://api.example.com">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-headers"><i class="fa fa-list"></i> Default headers JSON</label>
+        <textarea id="node-config-input-headers" rows="4" placeholder='{"Accept":"application/json"}'></textarea>
+        <div class="form-tips" style="width:70%; max-width:none; margin-left:100px; box-sizing:border-box; white-space:normal; overflow-wrap:anywhere">Header values may reference process variables as <code>${ENV_NAME}</code>. For RapidAPI, use <code>X-RapidAPI-Key</code> in the API key header field.</div>
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-apiKeyHeader"><i class="fa fa-lock"></i> API key header</label>
+        <input type="text" id="node-config-input-apiKeyHeader" placeholder="Authorization">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-apiKeyPrefix"><i class="fa fa-shield"></i> API key prefix</label>
+        <input type="text" id="node-config-input-apiKeyPrefix" placeholder="App ">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-apiKey"><i class="fa fa-key"></i> API key</label>
+        <input type="password" id="node-config-input-apiKey">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="gateway-api-config">
+    <p>Reusable upstream API settings for Gateway Adapter nodes.</p>
+    <p>Keep the base URL, common headers and API key here. Each Gateway Adapter then needs only an operation path and HTTP method.</p>
+    <p>The API key is stored in Node-RED credentials and is never sent to POD clients.</p>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('gateway-api-config', {
+        category: 'config',
+        defaults: {
+            name: { value: '' },
+            baseUrl: { value: '', required: true },
+            headers: { value: '{}' },
+            apiKeyHeader: { value: '' },
+            apiKeyPrefix: { value: '' }
+        },
+        credentials: {
+            apiKey: { type: 'password' }
+        },
+        label: function () { return this.name || this.baseUrl || 'Gateway API Config' }
+    })
+</script>

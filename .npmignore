@@ -1,0 +1,6 @@
+node_modules/
+*.tgz
+*.zip
+.git/
+.env
+gateway.config.json

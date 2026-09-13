@@ -1,0 +1,125 @@
+<script type="text/x-red" data-template-name="gateway-adapter">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Readable adapter name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-server"></i> Gateway server</label>
+        <input type="text" id="node-input-server">
+    </div>
+    <div class="form-row">
+        <label for="node-input-api"><i class="fa fa-cloud"></i> API config</label>
+        <input type="text" id="node-input-api">
+        <div class="form-tips" style="width:70%; max-width:none; margin-left:100px; box-sizing:border-box; white-space:normal; overflow-wrap:anywhere">Reuse one API config for all operations of the same provider.</div>
+    </div>
+    <div class="form-row">
+        <label for="node-input-operation"><i class="fa fa-bolt"></i> Operation</label>
+        <input type="text" id="node-input-operation" placeholder="service/operation">
+    </div>
+    <div class="form-row">
+        <label for="node-input-label"><i class="fa fa-tag"></i> Label</label>
+        <input type="text" id="node-input-label">
+    </div>
+    <div class="form-row">
+        <label for="node-input-path"><i class="fa fa-link"></i> API path</label>
+        <input type="text" id="node-input-path" placeholder="/sms/2/text/advanced">
+        <div class="form-tips" style="width:70%; max-width:none; margin-left:100px; box-sizing:border-box; white-space:normal; overflow-wrap:anywhere">Supports payload/request variables such as <code>/v1/riders/{{payload.id}}?region={{request.query.region}}</code>. Values are URL-encoded for each request. Missing variables fail with <code>INVALID_URL_TEMPLATE</code>.</div>
+    </div>
+    <div class="form-row">
+        <label for="node-input-method"><i class="fa fa-exchange"></i> HTTP method</label>
+        <select id="node-input-method">
+            <option value="POST">POST</option>
+            <option value="PUT">PUT</option>
+            <option value="PATCH">PATCH</option>
+            <option value="GET">GET</option>
+            <option value="DELETE">DELETE</option>
+            <option value="HEAD">HEAD</option>
+        </select>
+        <div class="form-tips" style="width:70%; max-width:none; margin-left:100px; box-sizing:border-box; white-space:normal; overflow-wrap:anywhere">GET/HEAD use query values only. POST/PUT/PATCH/DELETE send JSON from <code>msg._request.body</code> (or <code>msg.payload</code> when no body is provided). UPDATE is not an HTTP method; use PUT or PATCH.</div>
+    </div>
+    <div class="form-row">
+        <label for="node-input-rate"><i class="fa fa-tachometer"></i> Rate limit</label>
+        <span style="display: inline-flex; align-items: center; gap: 6px; width: calc(70% - 6px); vertical-align: middle; box-sizing: border-box">
+            <input type="number" id="node-input-rate" min="0" step="any" placeholder="optional" style="flex: 1 1 auto; width: auto; min-width: 0; box-sizing: border-box">
+            <select id="node-input-rateUnit" style="flex: 0 0 112px; width: 112px; box-sizing: border-box">
+                <option value="second">per second</option>
+                <option value="minute">per minute</option>
+            </select>
+        </span>
+        <div class="form-tips" style="width:70%; max-width:none; margin-left:100px; box-sizing:border-box; white-space:normal; overflow-wrap:anywhere">Optional operation-specific global limit. Leave empty to use the Gateway Server Config JSON rule. A per-minute value is converted to requests per second. Example: <code>20 per second</code> for rider info or <code>1 per second</code> for rider updates.</div>
+    </div>
+    <div class="form-row">
+        <label for="node-input-burst"><i class="fa fa-bolt"></i> Burst</label>
+        <input type="number" id="node-input-burst" min="1" step="1" placeholder="1">
+        <div class="form-tips" style="width:70%; max-width:none; margin-left:100px; box-sizing:border-box; white-space:normal; overflow-wrap:anywhere">Maximum short burst before the sustained rate is applied. Burst must be greater than or equal to Rate limit; the editor enforces this minimum.</div>
+    </div>
+    <div class="form-row">
+        <label for="node-input-headers"><i class="fa fa-list"></i> Additional headers JSON</label>
+        <textarea id="node-input-headers" rows="4" placeholder='{"Authorization":"Bearer ${API_KEY}"}'></textarea>
+    </div>
+    <div class="form-row">
+        <label for="node-input-idempotencyHeader"><i class="fa fa-key"></i> Idempotency header</label>
+        <input type="text" id="node-input-idempotencyHeader" placeholder="X-Idempotency-Key">
+    </div>
+    <div class="form-row">
+        <label for="node-input-keepAlive"><i class="fa fa-plug"></i> Keep-Alive</label>
+        <input type="checkbox" id="node-input-keepAlive" style="width:auto">
+        <div class="form-tips" style="width:70%; max-width:none; margin-left:100px; box-sizing:border-box; white-space:normal; overflow-wrap:anywhere">Reuse persistent HTTP connections to this upstream between requests (on by default). Uncheck only for a provider or load balancer that mishandles connection reuse; the gateway then sends <code>Connection: close</code> on every request to this operation.</div>
+    </div>
+    <div class="form-row">
+        <label for="node-input-description"><i class="fa fa-info-circle"></i> Description</label>
+        <input type="text" id="node-input-description">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="gateway-adapter">
+    <p>Registers one upstream JSON API operation in the central Gateway Server.</p>
+    <p>Pick a <b>Gateway API Config</b> to reuse the provider base URL and credentials, then enter only the API path.</p>
+    <p>Enter a new unique <code>service/name</code> key here. The adapter's HTTP method, path and request contract are published to the Adapter / operation dropdown in Gateway Call.</p>
+    <p>Use <code>{{payload.id}}</code>, <code>{{request.params.id}}</code> or <code>{{msg._request.params.id}}</code> in the API path for a value from the incoming request. Values are URL-encoded automatically. <code>{{gateway.requestId}}</code> is also available for a request identifier.</p>
+    <p>The adapter publishes its method/path contract to Gateway Call and Gateway Out. Those nodes validate <code>msg._request</code> before sending; the central Gateway validates it again before Redis/upstream execution.</p>
+    <p>Use <code>${ENV_NAME}</code> in additional headers to read a credential from the gateway process environment.</p>
+    <p>The Gateway Server performs the HTTP request and applies the global Redis rate limit. An optional rate on this node overrides the matching JSON rule for this exact operation. PODs never call this URL directly.</p>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('gateway-adapter', {
+        category: 'POD Gateway',
+        color: '#f3d6a2',
+        defaults: {
+            name: { value: '' },
+            server: { type: 'gateway-server-config', required: true },
+            api: { type: 'gateway-api-config' },
+            operation: { value: '', required: true },
+            label: { value: '' },
+            path: { value: '' },
+            url: { value: '' },
+            method: { value: 'POST' },
+            rate: { value: '' },
+            rateUnit: { value: 'second' },
+            burst: { value: 1 },
+            headers: { value: '{}' },
+            idempotencyHeader: { value: '' },
+            keepAlive: { value: true },
+            description: { value: '' }
+        },
+        inputs: 0,
+        outputs: 0,
+        icon: 'font-awesome/fa-cloud-upload',
+        oneditprepare: function () {
+            const rateInput = $('#node-input-rate')
+            const burstInput = $('#node-input-burst')
+            const syncBurstMinimum = function () {
+                const rate = Number(rateInput.val())
+                const minimum = Number.isFinite(rate) && rate > 0 ? Math.ceil(rate) : 1
+                burstInput.attr('min', minimum)
+                const burst = Number(burstInput.val())
+                if (Number.isFinite(burst) && burst < minimum) burstInput.val(minimum)
+            }
+            rateInput.on('input change', syncBurstMinimum)
+            syncBurstMinimum()
+        },
+        label: function () { return this.name || this.operation || 'Gateway Adapter' },
+        paletteLabel: 'Gateway Adapter'
+    })
+</script>

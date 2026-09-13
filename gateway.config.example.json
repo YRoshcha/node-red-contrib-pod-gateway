@@ -1,0 +1,37 @@
+{
+  "redis": {
+    "url": "redis://127.0.0.1:6379",
+    "keyPrefix": "pod-gateway",
+    "maxQueueSize": 10000,
+    "resultTtlSeconds": 3600,
+    "deleteOnAck": true,
+    "retryPollMs": 250
+  },
+  "server": {
+    "port": 8080,
+    "concurrency": 32
+  },
+  "auth": {
+    "token": "change-me"
+  },
+  "rateLimits": {
+    "upstream": {
+      "rate": 50,
+      "burst": 1
+    },
+    "demo": {
+      "rate": 2,
+      "burst": 1
+    }
+  },
+  "upstream": {
+    "baseUrl": "https://api.example.com",
+    "path": "/v1/resource",
+    "method": "GET",
+    "apiKey": "replace-me",
+    "apiKeyHeader": "Authorization",
+    "apiKeyPrefix": "Bearer ",
+    "rate": 50,
+    "burst": 1
+  }
+}

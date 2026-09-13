@@ -1,0 +1,381 @@
+[
+  {
+    "id": "retention-retry-tab",
+    "type": "tab",
+    "label": "POD Gateway · Redis retention + delayed retry",
+    "disabled": false,
+    "info": "One-tab local demo for dev.29. Start Redis, deploy this flow, then click Burst 5 calls to see durable delayed retries and XDEL cleanup."
+  },
+  {
+    "id": "retention-retry-server",
+    "type": "gateway-server-config",
+    "name": "Central Gateway · dev.29",
+    "host": "0.0.0.0",
+    "port": 8080,
+    "path": "/ws",
+    "redisUrl": "redis://127.0.0.1:6379",
+    "redisRejectUnauthorized": true,
+    "redisKeyPrefix": "pod-gateway-retention-demo",
+    "redisConsumer": "retention-retry-gateway",
+    "redisMaxQueueSize": 10000,
+    "redisResultTtlSeconds": 300,
+    "redisDeleteOnAck": true,
+    "redisRetryPollMs": 100,
+    "rateLimits": "{\"demo/echo\":{\"rate\":1,\"burst\":1}}",
+    "concurrency": 4,
+    "upstreamTimeoutMs": 60000,
+    "maxAttempts": 1,
+    "verboseLogging": true,
+    "credentials": {}
+  },
+  {
+    "id": "retention-retry-api",
+    "type": "gateway-api-config",
+    "name": "Local echo API",
+    "baseUrl": "http://127.0.0.1:1880",
+    "headers": "{\"Accept\":\"application/json\"}",
+    "apiKeyHeader": "",
+    "apiKeyPrefix": "",
+    "credentials": {}
+  },
+  {
+    "id": "retention-retry-adapter",
+    "type": "gateway-adapter",
+    "name": "Demo Echo Adapter",
+    "server": "retention-retry-server",
+    "api": "retention-retry-api",
+    "operation": "demo/echo",
+    "label": "Demo · Echo",
+    "path": "/pod-gateway-retention-demo/echo",
+    "method": "POST",
+    "headers": "{}",
+    "idempotencyHeader": "",
+    "description": "Local deterministic upstream used to inspect queue, retry and retention behavior."
+  },
+  {
+    "id": "retention-retry-http-in",
+    "type": "http in",
+    "z": "retention-retry-tab",
+    "name": "Local upstream endpoint",
+    "url": "/pod-gateway-retention-demo/echo",
+    "method": "post",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 170,
+    "y": 560,
+    "wires": [
+      [
+        "retention-retry-upstream"
+      ]
+    ]
+  },
+  {
+    "id": "retention-retry-upstream",
+    "type": "function",
+    "z": "retention-retry-tab",
+    "name": "Local upstream echo",
+    "func": "msg.payload = { echoed: msg.payload, handledBy: 'local-upstream', receivedAt: new Date().toISOString() };\nmsg.headers = { 'content-type': 'application/json' };\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 420,
+    "y": 560,
+    "wires": [
+      [
+        "retention-retry-http-response"
+      ]
+    ]
+  },
+  {
+    "id": "retention-retry-http-response",
+    "type": "http response",
+    "z": "retention-retry-tab",
+    "name": "Return local response",
+    "statusCode": "",
+    "headers": {},
+    "x": 680,
+    "y": 560,
+    "wires": []
+  },
+  {
+    "id": "retention-retry-connector",
+    "type": "gateway-config",
+    "name": "POD connector",
+    "url": "ws://127.0.0.1:8080/ws",
+    "podId": "pod-retention-retry-demo",
+    "connectTimeout": 10000,
+    "reconnectInterval": 3000,
+    "verboseLogging": true,
+    "credentials": {}
+  },
+  {
+    "id": "retention-retry-single-trigger",
+    "type": "inject",
+    "z": "retention-retry-tab",
+    "name": "Call once",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "{\"kind\":\"sync\",\"value\":\"one call\"}",
+    "payloadType": "json",
+    "x": 130,
+    "y": 100,
+    "wires": [
+      [
+        "retention-retry-call"
+      ]
+    ]
+  },
+  {
+    "id": "retention-retry-burst-trigger",
+    "type": "inject",
+    "z": "retention-retry-tab",
+    "name": "Burst 5 calls",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "{}",
+    "payloadType": "json",
+    "x": 140,
+    "y": 160,
+    "wires": [
+      [
+        "retention-retry-build-burst"
+      ]
+    ]
+  },
+  {
+    "id": "retention-retry-build-burst",
+    "type": "function",
+    "z": "retention-retry-tab",
+    "name": "Create 5 requests",
+    "func": "const messages = [];\nfor (let index = 1; index <= 5; index++) {\n    messages.push({ payload: { kind: 'burst', index } });\n}\nreturn [messages];",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 370,
+    "y": 160,
+    "wires": [
+      [
+        "retention-retry-call"
+      ]
+    ]
+  },
+  {
+    "id": "retention-retry-call",
+    "type": "gateway-call",
+    "z": "retention-retry-tab",
+    "name": "Gateway Call · demo/echo",
+    "gateway": "retention-retry-connector",
+    "operation": "demo/echo",
+    "timeout": 60000,
+    "priority": "normal",
+    "x": 650,
+    "y": 120,
+    "wires": [
+      [
+        "retention-retry-call-result"
+      ],
+      [
+        "retention-retry-call-error"
+      ]
+    ]
+  },
+  {
+    "id": "retention-retry-call-result",
+    "type": "debug",
+    "z": "retention-retry-tab",
+    "name": "Call result + httpStatus",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 930,
+    "y": 100,
+    "wires": []
+  },
+  {
+    "id": "retention-retry-call-error",
+    "type": "debug",
+    "z": "retention-retry-tab",
+    "name": "Call error",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 900,
+    "y": 150,
+    "wires": []
+  },
+  {
+    "id": "retention-retry-out-trigger",
+    "type": "inject",
+    "z": "retention-retry-tab",
+    "name": "Send async task",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "{\"kind\":\"async\",\"value\":\"bulk task\"}",
+    "payloadType": "json",
+    "x": 150,
+    "y": 280,
+    "wires": [
+      [
+        "retention-retry-out"
+      ]
+    ]
+  },
+  {
+    "id": "retention-retry-out",
+    "type": "gateway-out",
+    "z": "retention-retry-tab",
+    "name": "Gateway Out · demo/echo",
+    "gateway": "retention-retry-connector",
+    "operation": "demo/echo",
+    "priority": "bulk",
+    "acceptTimeout": 10000,
+    "x": 430,
+    "y": 280,
+    "wires": [
+      [
+        "retention-retry-accepted"
+      ],
+      [
+        "retention-retry-out-error"
+      ]
+    ]
+  },
+  {
+    "id": "retention-retry-accepted",
+    "type": "debug",
+    "z": "retention-retry-tab",
+    "name": "Gateway Out accepted",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 710,
+    "y": 260,
+    "wires": []
+  },
+  {
+    "id": "retention-retry-out-error",
+    "type": "debug",
+    "z": "retention-retry-tab",
+    "name": "Gateway Out error",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 710,
+    "y": 310,
+    "wires": []
+  },
+  {
+    "id": "retention-retry-in",
+    "type": "gateway-in",
+    "z": "retention-retry-tab",
+    "name": "Gateway In · demo/echo",
+    "gateway": "retention-retry-connector",
+    "event": "demo/echo",
+    "x": 260,
+    "y": 390,
+    "wires": [
+      [
+        "retention-retry-in-result"
+      ]
+    ]
+  },
+  {
+    "id": "retention-retry-in-result",
+    "type": "debug",
+    "z": "retention-retry-tab",
+    "name": "Async result in same connector",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 570,
+    "y": 390,
+    "wires": []
+  },
+  {
+    "id": "retention-retry-metrics",
+    "type": "gateway-metrics",
+    "z": "retention-retry-tab",
+    "name": "Gateway metrics",
+    "server": "retention-retry-server",
+    "events": "request.completed",
+    "x": 250,
+    "y": 470,
+    "wires": [
+      [
+        "retention-retry-metrics-debug"
+      ]
+    ]
+  },
+  {
+    "id": "retention-retry-metrics-debug",
+    "type": "debug",
+    "z": "retention-retry-tab",
+    "name": "Gateway latency metrics",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 560,
+    "y": 470,
+    "wires": []
+  }
+]

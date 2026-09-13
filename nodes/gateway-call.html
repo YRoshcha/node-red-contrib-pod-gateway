@@ -1,0 +1,138 @@
+<script type="text/x-red" data-template-name="gateway-call">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Readable node name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-gateway"><i class="fa fa-plug"></i> Gateway</label>
+        <input type="text" id="node-input-gateway">
+    </div>
+    <div class="form-row">
+        <label for="pod-gateway-operation-picker"><i class="fa fa-bolt"></i> Adapter / operation</label>
+        <input type="hidden" id="node-input-operation">
+        <span style="display:inline-flex; align-items:center; gap:6px; width:calc(70% - 6px); vertical-align:middle; box-sizing:border-box">
+            <select id="pod-gateway-operation-picker" title="Registered Gateway Adapters" style="flex:1 1 auto; width:auto; min-width:0; box-sizing:border-box">
+                <option value="">Loading adapters...</option>
+            </select>
+        </span>
+        <div id="pod-gateway-operation-manual-row" style="display:none; width:70%; margin-left:100px; margin-top:6px; box-sizing:border-box">
+            <input type="text" id="pod-gateway-operation-manual" placeholder="service/name" style="width:100%; box-sizing:border-box">
+            <div class="form-tips" style="margin-top:4px; white-space:normal; overflow-wrap:anywhere">No matching registered Adapter was found. Enter a key manually; it will be validated when the request is sent.</div>
+        </div>
+        <div id="pod-gateway-contract" class="form-tips" style="width:70%; max-width:none; margin-left:100px; margin-top:6px; box-sizing:border-box; white-space:normal; overflow-wrap:anywhere"></div>
+    </div>
+    <div class="form-row">
+        <label for="node-input-timeout"><i class="fa fa-clock-o"></i> Timeout (ms)</label>
+        <input type="number" id="node-input-timeout" min="1">
+    </div>
+    <div class="form-row">
+        <label for="node-input-priority"><i class="fa fa-sort-amount-asc"></i> Priority</label>
+        <select id="node-input-priority">
+            <option value="normal">Normal</option>
+            <option value="bulk">Bulk</option>
+        </select>
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="gateway-call">
+    <p>Calls a selected Gateway Adapter operation through the central gateway and waits for its result over the persistent WebSocket connection.</p>
+    <p>The <b>Adapter / operation</b> dropdown is populated from gateway capabilities. Selecting an entry shows the adapter's HTTP method, path template and accepted request fields before you build the message. A manual field appears only when the gateway has no capabilities yet or the saved operation is not currently registered.</p>
+    <p>Output 1 is the successful result. Output 2 is a normalized gateway or upstream error.</p>
+    <p>The gateway, not the POD, applies the global rate limit and performs the external API request.</p>
+    <p>Optional per-request values go in <code>msg._request</code>: <code>params</code> for URL templates, <code>query</code> for query parameters, and safe extra <code>headers</code>. Header values can use <code>{{payload.field}}</code>, <code>{{request.query.tenant}}</code> or <code>{{gateway.requestId}}</code>; they are sent without URL encoding. Missing values or line breaks are rejected. Credentials and transport headers remain in the Gateway API Config. Use <code>body</code> for POST/PUT/PATCH/DELETE. GET/HEAD do not send a body.</p>
+    <p>On both outputs the node keeps <code>msg._request.input</code> and <code>msg._request.output</code>. The output contains the upstream <code>statusCode</code> and response <code>body</code>; <code>msg.gateway.httpStatus</code> is also set when available.</p>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('gateway-call', {
+        category: 'POD Gateway',
+        color: '#d7e8f5',
+        defaults: {
+            name: { value: '' },
+            gateway: { type: 'gateway-config', required: true },
+            operation: { value: '', required: true },
+            timeout: { value: 60000, validate: RED.validators.number() },
+            priority: { value: 'normal' }
+        },
+        inputs: 1,
+        outputs: 2,
+        icon: 'font-awesome/fa-exchange',
+        align: 'right',
+        label: function () { return this.name || this.operation || 'Gateway Call' },
+        paletteLabel: 'Gateway Call',
+        oneditprepare: function () {
+            var operationInput = $('#node-input-operation');
+            var operationPicker = $('#pod-gateway-operation-picker');
+            var manualRow = $('#pod-gateway-operation-manual-row');
+            var manualInput = $('#pod-gateway-operation-manual');
+            var contract = $('#pod-gateway-contract');
+            var capabilities = [];
+            var showContract = function (item) {
+                contract.empty();
+                if (!item) {
+                    $('<span>').text('Select a registered Adapter to see its request contract.').appendTo(contract);
+                    return;
+                }
+                var schema = item.requestSchema || {};
+                var accepted = ['params', 'query', 'headers'];
+                if (schema.body) accepted.push('body');
+                $('<div>').append($('<b>').text('Adapter contract')).appendTo(contract);
+                $('<div>').text((schema.method || 'HTTP') + '  ' + (schema.template || 'configured path')).appendTo(contract);
+                $('<div>').text('Accepted request fields: ' + (accepted.length ? accepted.join(', ') : 'none')).appendTo(contract);
+                if (item.description) $('<div>').text(item.description).appendTo(contract);
+            };
+            var setPickerState = function (items, placeholder) {
+                var current = String(operationInput.val() || '').trim();
+                var seen = Object.create(null);
+                capabilities = Array.isArray(items) ? items : [];
+                operationPicker.empty();
+                $('<option>').val('').text(placeholder || 'Available operations...').appendTo(operationPicker);
+                (capabilities || []).forEach(function (item) {
+                    if (!item || !item.operation || seen[item.operation]) return;
+                    seen[item.operation] = true;
+                    var label = item.label || item.description;
+                    $('<option>').val(item.operation).text(label ? label + ' — ' + item.operation : item.operation).appendTo(operationPicker);
+                });
+                if (current && !seen[current]) $('<option>').val(current).text(current + ' (current)').appendTo(operationPicker);
+                var selected = capabilities.find(function (item) { return item.operation === current; });
+                operationPicker.prop('disabled', !capabilities.length).val(current || '');
+                manualInput.val(current);
+                manualRow.toggle(!capabilities.length || Boolean(current && !selected));
+                showContract(selected);
+            };
+            var load = function () {
+                var gateway = $('#node-input-gateway').val();
+                if (!gateway) {
+                    setPickerState([], 'Select a gateway first...');
+                    return;
+                }
+                operationPicker.prop('disabled', true).empty().append($('<option>').val('').text('Loading operations...'));
+                $.getJSON('pod-gateway/capabilities/' + encodeURIComponent(gateway))
+                    .done(function (items) { setPickerState(items, (items || []).length ? 'Select an available operation...' : 'No registered operations'); })
+                    .fail(function () { setPickerState([], 'Gateway unavailable — enter manually'); });
+            };
+            operationPicker.on('change', function () {
+                if (this.value) {
+                    operationInput.val(this.value).trigger('change');
+                    manualInput.val(this.value);
+                    manualRow.hide();
+                    showContract(capabilities.find(function (item) { return item.operation === operationInput.val(); }));
+                }
+            });
+            manualInput.on('input change', function () {
+                var value = String(this.value || '').trim();
+                operationInput.val(value).trigger('change');
+                var item = capabilities.find(function (candidate) { return candidate.operation === value; });
+                if (value && !operationPicker.find('option').filter(function () { return this.value === value; }).length) {
+                    $('<option>').val(value).text(value + ' (manual)').appendTo(operationPicker);
+                }
+                operationPicker.val(value || '');
+                manualRow.toggle(!item);
+                showContract(item);
+            });
+            $('#node-input-gateway').on('change', load);
+            operationInput.val(String(operationInput.val() || '').trim());
+            load();
+        }
+    })
+</script>

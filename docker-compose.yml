@@ -1,0 +1,11 @@
+services:
+  redis:
+    image: redis:7.2-alpine
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - pod-gateway-redis:/data
+
+volumes:
+  pod-gateway-redis:

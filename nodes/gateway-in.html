@@ -1,0 +1,78 @@
+<script type="text/x-red" data-template-name="gateway-in">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Readable node name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-gateway"><i class="fa fa-plug"></i> Gateway</label>
+        <input type="text" id="node-input-gateway">
+    </div>
+    <div class="form-row">
+        <label for="node-input-event"><i class="fa fa-inbox"></i> Event / operation</label>
+        <span style="display:inline-flex; align-items:center; gap:6px; width:calc(70% - 6px); vertical-align:middle; box-sizing:border-box">
+            <input type="text" id="node-input-event" placeholder="service/name (or leave empty)" style="flex:1 1 auto; width:auto; min-width:0; box-sizing:border-box">
+            <select id="pod-gateway-event-picker" title="Available operations" style="flex:0 0 210px; width:210px; box-sizing:border-box">
+                <option value="">Available operations...</option>
+            </select>
+        </span>
+        <div class="form-tips" style="width:70%; max-width:none; margin-left:100px; box-sizing:border-box; white-space:normal; overflow-wrap:anywhere">Select an operation from the gateway, or leave the field empty to receive all events.</div>
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="gateway-in">
+    <p>Receives asynchronous results, callbacks and events from the central gateway.</p>
+    <p>Leave the filter empty to receive all gateway messages for this POD.</p>
+    <p>For adapter results, <code>msg._request.output.statusCode</code> contains the upstream HTTP status and <code>msg._request.output.body</code> contains the response body.</p>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('gateway-in', {
+        category: 'POD Gateway',
+        color: '#d7e8f5',
+        defaults: {
+            name: { value: '' },
+            gateway: { type: 'gateway-config', required: true },
+            event: { value: '' }
+        },
+        inputs: 0,
+        outputs: 1,
+        icon: 'font-awesome/fa-exchange',
+        label: function () { return this.name || this.event || 'Gateway In' },
+        paletteLabel: 'Gateway In',
+        oneditprepare: function () {
+            var eventInput = $('#node-input-event');
+            var eventPicker = $('#pod-gateway-event-picker');
+            var setPickerState = function (items, placeholder) {
+                var current = String(eventInput.val() || '').trim();
+                var seen = Object.create(null);
+                eventPicker.empty();
+                $('<option>').val('').text(placeholder || 'Available operations...').appendTo(eventPicker);
+                (items || []).forEach(function (item) {
+                    if (!item || !item.operation || seen[item.operation]) return;
+                    seen[item.operation] = true;
+                    var label = item.label || item.description;
+                    $('<option>').val(item.operation).text(label ? label + ' — ' + item.operation : item.operation).appendTo(eventPicker);
+                });
+                if (current && !seen[current]) $('<option>').val(current).text(current + ' (current)').appendTo(eventPicker);
+                eventPicker.prop('disabled', false).val(seen[current] ? current : '');
+            };
+            var load = function () {
+                var gateway = $('#node-input-gateway').val();
+                if (!gateway) {
+                    setPickerState([], 'Select a gateway first...');
+                    eventPicker.prop('disabled', true);
+                    return;
+                }
+                eventPicker.prop('disabled', true).empty().append($('<option>').val('').text('Loading operations...'));
+                $.getJSON('pod-gateway/capabilities/' + encodeURIComponent(gateway))
+                    .done(function (items) { setPickerState(items, (items || []).length ? 'Select an available operation...' : 'No registered operations'); })
+                    .fail(function () { setPickerState([], 'Unavailable — enter manually'); });
+            };
+            eventPicker.on('change', function () {
+                if (this.value) eventInput.val(this.value).trigger('change');
+            });
+            $('#node-input-gateway').on('change', load);
+            load();
+        }
+    })
+</script>

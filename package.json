@@ -1,0 +1,55 @@
+{
+  "name": "@yroshcha/node-red-contrib-pod-gateway",
+  "version": "1.0.0",
+  "description": "Node-RED nodes and a WebSocket gateway for centrally rate-limited upstream API calls",
+  "main": "lib/index.js",
+  "bin": {
+    "pod-gateway": "bin/pod-gateway.js"
+  },
+  "files": [
+    "lib",
+    "nodes",
+    "CHANGELOG.md",
+    "bin",
+    "examples",
+    "gateway.config.example.json",
+    "docker-compose.yml",
+    ".env.example"
+  ],
+  "scripts": {
+    "test": "node --test",
+    "test:redis": "node --test test/redis.integration.test.js",
+    "test:flows": "node --test test/examples.test.js",
+    "test:load": "node bin/pod-gateway-load.js",
+    "start": "node bin/pod-gateway.js",
+    "pack:dev": "npm pack"
+  },
+  "keywords": [
+    "node-red",
+    "node-red-contrib",
+    "gateway",
+    "websocket",
+    "rate-limit",
+    "redis"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "redis": "^4.7.0",
+    "ws": "^8.18.0"
+  },
+  "node-red": {
+    "nodes": {
+      "gateway-config": "nodes/gateway-config.js",
+      "gateway-server-config": "nodes/gateway-server-config.js",
+      "gateway-api-config": "nodes/gateway-api-config.js",
+      "gateway-adapter": "nodes/gateway-adapter.js",
+      "gateway-in": "nodes/gateway-in.js",
+      "gateway-out": "nodes/gateway-out.js",
+      "gateway-call": "nodes/gateway-call.js",
+      "gateway-metrics": "nodes/gateway-metrics.js"
+    }
+  }
+}
