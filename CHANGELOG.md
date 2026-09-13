@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.2 — 2026-09-13
+
+License change, no functional or protocol changes.
+
+- relicensed from MIT to Apache-2.0 (`LICENSE` replaced with the full
+  Apache License, Version 2.0 text; `package.json` `license` field updated
+  to match). Apache-2.0 adds an explicit patent grant and a patent
+  retaliation clause on top of what MIT covers; existing MIT-licensed
+  copies of 1.0.0/1.0.1 stay valid under their original terms.
+
 ## 1.0.1 — 2026-09-13
 
 Metadata/packaging patch, no functional or protocol changes.
