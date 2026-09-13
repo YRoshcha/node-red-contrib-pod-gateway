@@ -66,7 +66,7 @@ test('Gateway Call node sends a successful result and preserves message metadata
   const client = new FakeClient()
   const RED = makeRED({ gateway: { client } })
   require('../nodes/gateway-call')(RED)
-  const Node = RED.registered['gateway-call']
+  const Node = RED.registered['pod-gateway-call']
   const node = new Node({ id: 'call', gateway: 'gateway', operation: 'demo/echo', timeout: 1000, priority: 'normal' })
   const outputs = []
   let done = 0
@@ -89,7 +89,7 @@ test('Gateway Call node sends normalized errors to output 2', async () => {
   })
   const RED = makeRED({ gateway: { client } })
   require('../nodes/gateway-call')(RED)
-  const node = new RED.registered['gateway-call']({ id: 'call-error', gateway: 'gateway', operation: 'demo/echo', timeout: 1000 })
+  const node = new RED.registered['pod-gateway-call']({ id: 'call-error', gateway: 'gateway', operation: 'demo/echo', timeout: 1000 })
   const outputs = []
   node.emit('input', { payload: 'x' }, messages => outputs.push(messages), () => {})
   await new Promise(resolve => setImmediate(resolve))
@@ -109,7 +109,7 @@ test('Gateway Call validates the API request contract and exposes input/output s
   client.nextResult = { payload: { updated: true }, response: { statusCode: 200 }, durationMs: 8 }
   const RED = makeRED({ gateway: { client } })
   require('../nodes/gateway-call')(RED)
-  const node = new RED.registered['gateway-call']({ id: 'call-contract', gateway: 'gateway', operation: 'rider/update', timeout: 1000 })
+  const node = new RED.registered['pod-gateway-call']({ id: 'call-contract', gateway: 'gateway', operation: 'rider/update', timeout: 1000 })
   const outputs = []
   node.emit('input', {
     payload: { id: 'rider-42', tenantId: 'tenant/42' },
@@ -138,7 +138,7 @@ test('Gateway Call rejects a body supplied to a GET operation before sending it'
   }]
   const RED = makeRED({ gateway: { client } })
   require('../nodes/gateway-call')(RED)
-  const node = new RED.registered['gateway-call']({ id: 'call-invalid-contract', gateway: 'gateway', operation: 'rider/getInfo', timeout: 1000 })
+  const node = new RED.registered['pod-gateway-call']({ id: 'call-invalid-contract', gateway: 'gateway', operation: 'rider/getInfo', timeout: 1000 })
   const outputs = []
   node.emit('input', {
     payload: { id: 'rider-42' },
@@ -158,7 +158,7 @@ test('Gateway Out node reports accepted work without waiting for its result', as
   const client = new FakeClient()
   const RED = makeRED({ gateway: { client } })
   require('../nodes/gateway-out')(RED)
-  const node = new RED.registered['gateway-out']({ id: 'out', gateway: 'gateway', operation: 'demo/echo', priority: 'bulk', acceptTimeout: 1000 })
+  const node = new RED.registered['pod-gateway-out']({ id: 'out', gateway: 'gateway', operation: 'demo/echo', priority: 'bulk', acceptTimeout: 1000 })
   const outputs = []
   node.emit('input', { payload: { async: true } }, messages => outputs.push(messages), () => {})
   await new Promise(resolve => setImmediate(resolve))
@@ -176,7 +176,7 @@ test('Gateway Out sends the same method-aware request contract', async () => {
   }]
   const RED = makeRED({ gateway: { client } })
   require('../nodes/gateway-out')(RED)
-  const node = new RED.registered['gateway-out']({ id: 'out-contract', gateway: 'gateway', operation: 'rider/update', priority: 'bulk', acceptTimeout: 1000 })
+  const node = new RED.registered['pod-gateway-out']({ id: 'out-contract', gateway: 'gateway', operation: 'rider/update', priority: 'bulk', acceptTimeout: 1000 })
   const outputs = []
   node.emit('input', {
     payload: { id: 'rider-42' },
@@ -192,7 +192,7 @@ test('Gateway In node filters operations and emits gateway metadata', async () =
   const client = new FakeClient()
   const RED = makeRED({ gateway: { client } })
   require('../nodes/gateway-in')(RED)
-  const node = new RED.registered['gateway-in']({ id: 'in', gateway: 'gateway', event: 'demo/echo' })
+  const node = new RED.registered['pod-gateway-in']({ id: 'in', gateway: 'gateway', event: 'demo/echo' })
   client.emit('message', { type: 'result', requestId: 'req-1', operation: 'demo/missing', payload: 1 })
   client.emit('message', { type: 'result', requestId: 'req-2', operation: 'demo/echo', payload: { ok: true } })
   assert.equal(RED.sent.length, 1)
@@ -208,7 +208,7 @@ test('Gateway In forwards the canonical request envelope and HTTP status', async
   const client = new FakeClient()
   const RED = makeRED({ gateway: { client } })
   require('../nodes/gateway-in')(RED)
-  const node = new RED.registered['gateway-in']({ id: 'in-contract', gateway: 'gateway', event: 'rider/getInfo' })
+  const node = new RED.registered['pod-gateway-in']({ id: 'in-contract', gateway: 'gateway', event: 'rider/getInfo' })
   const requestEnvelope = {
     input: { method: 'GET', params: { id: 'rider-42' }, payload: { id: 'rider-42' } },
     output: { statusCode: 200, body: { id: 'rider-42' } }
@@ -230,7 +230,7 @@ test('Gateway Metrics node forwards filtered gateway events for downstream metri
   const server = new EventEmitter()
   const RED = makeRED({ server })
   require('../nodes/gateway-metrics')(RED)
-  const node = new RED.registered['gateway-metrics']({
+  const node = new RED.registered['pod-gateway-metrics']({
     id: 'metrics',
     server: 'server',
     events: 'request.completed, upstream.completed'
@@ -260,7 +260,7 @@ test('Gateway Metrics node forwards filtered gateway events for downstream metri
 test('Gateway API Config validates settings and builds credentialed request options', () => {
   const RED = makeRED()
   require('../nodes/gateway-api-config')(RED)
-  const node = new RED.registered['gateway-api-config']({
+  const node = new RED.registered['pod-gateway-api-config']({
     id: 'api',
     baseUrl: 'https://api.example.test',
     headers: '{"Accept":"application/json"}',
@@ -287,7 +287,7 @@ test('Gateway Adapter registers a provider operation using API config headers', 
   }
   const RED = makeRED({ server, api })
   require('../nodes/gateway-adapter')(RED)
-  const node = new RED.registered['gateway-adapter']({
+  const node = new RED.registered['pod-gateway-adapter']({
     id: 'adapter', server: 'server', api: 'api', operation: 'demo/echo', path: '/echo', method: 'POST', headers: '{}', rate: '60', rateUnit: 'minute', burst: '60'
   })
   await node.ready
@@ -331,7 +331,7 @@ test('Gateway Adapter resolves payload variables in an API path per request', as
   }
   const RED = makeRED({ server, api })
   require('../nodes/gateway-adapter')(RED)
-  const node = new RED.registered['gateway-adapter']({
+  const node = new RED.registered['pod-gateway-adapter']({
     id: 'adapter-template', server: 'server', api: 'api', operation: 'rider/getInfo', path: '/v1/riders/{{payload.id}}', method: 'GET', headers: '{}'
   })
   await node.ready
@@ -348,7 +348,7 @@ test('Gateway Adapter rejects an invalid operation rate limit', () => {
   const server = { logger: { debug: () => {}, error: () => {} }, registerOperation: async () => {}, unregisterOperation: async () => {} }
   const RED = makeRED({ server })
   require('../nodes/gateway-adapter')(RED)
-  new RED.registered['gateway-adapter']({
+  new RED.registered['pod-gateway-adapter']({
     id: 'adapter-invalid-rate', server: 'server', operation: 'demo/echo', url: 'https://api.example.test/echo', rate: '0', rateUnit: 'second', burst: '1'
   })
   assert.match(RED.errors[0].value, /Rate limit must be a positive number/)
@@ -358,7 +358,7 @@ test('Gateway Adapter rejects a burst smaller than its rate', () => {
   const server = { logger: { debug: () => {}, error: () => {} }, registerOperation: async () => {}, unregisterOperation: async () => {} }
   const RED = makeRED({ server })
   require('../nodes/gateway-adapter')(RED)
-  new RED.registered['gateway-adapter']({
+  new RED.registered['pod-gateway-adapter']({
     id: 'adapter-small-burst', server: 'server', operation: 'demo/echo', url: 'https://api.example.test/echo', rate: '20', rateUnit: 'second', burst: '1'
   })
   assert.match(RED.errors[0].value, /Burst must be greater than or equal to rate/)
@@ -368,7 +368,7 @@ test('Gateway Adapter rejects the non-standard UPDATE method without throwing fr
   const server = { logger: { debug: () => {}, error: () => {} }, registerOperation: async () => {}, unregisterOperation: async () => {} }
   const RED = makeRED({ server })
   require('../nodes/gateway-adapter')(RED)
-  assert.doesNotThrow(() => new RED.registered['gateway-adapter']({
+  assert.doesNotThrow(() => new RED.registered['pod-gateway-adapter']({
     id: 'adapter-update-method',
     server: 'server',
     operation: 'demo/update',

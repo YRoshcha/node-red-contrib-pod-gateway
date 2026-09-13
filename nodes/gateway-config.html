@@ -1,4 +1,4 @@
-<script type="text/x-red" data-template-name="gateway-config">
+<script type="text/x-red" data-template-name="pod-gateway-config">
     <div class="form-row">
         <label for="node-config-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-config-input-name" placeholder="Production gateway">
@@ -31,7 +31,7 @@
     </div>
 </script>
 
-<script type="text/x-red" data-help-name="gateway-config">
+<script type="text/x-red" data-help-name="pod-gateway-config">
     <p>Shared connection to the central POD Gateway. Configure this once and reuse it from Gateway In, Gateway Out and Gateway Call nodes.</p>
     <p>The token is stored in Node-RED credentials. External API credentials are never stored in a flow.</p>
     <p>Redis belongs to the central gateway. Configure it in the separate <b>Gateway Server Config</b> node, not here.</p>
@@ -39,7 +39,7 @@
 </script>
 
 <script type="text/javascript">
-    RED.nodes.registerType('gateway-config', {
+    RED.nodes.registerType('pod-gateway-config', {
         category: 'config',
         defaults: {
             name: { value: '' },

@@ -8,7 +8,7 @@
   },
   {
     "id": "custom-headers-server",
-    "type": "gateway-server-config",
+    "type": "pod-gateway-server-config",
     "name": "Central Gateway + Redis",
     "host": "0.0.0.0",
     "port": 8080,
@@ -30,7 +30,7 @@
   },
   {
     "id": "custom-headers-api",
-    "type": "gateway-api-config",
+    "type": "pod-gateway-api-config",
     "name": "Local echo API",
     "baseUrl": "http://127.0.0.1:1880",
     "headers": "{\"Accept\":\"application/json\"}",
@@ -40,7 +40,7 @@
   },
   {
     "id": "custom-headers-get-adapter",
-    "type": "gateway-adapter",
+    "type": "pod-gateway-adapter",
     "name": "GET echo adapter",
     "server": "custom-headers-server",
     "api": "custom-headers-api",
@@ -54,7 +54,7 @@
   },
   {
     "id": "custom-headers-post-adapter",
-    "type": "gateway-adapter",
+    "type": "pod-gateway-adapter",
     "name": "POST echo adapter",
     "server": "custom-headers-server",
     "api": "custom-headers-api",
@@ -148,7 +148,7 @@
   },
   {
     "id": "custom-headers-gateway",
-    "type": "gateway-config",
+    "type": "pod-gateway-config",
     "name": "Local POD connector",
     "url": "ws://127.0.0.1:8080/ws",
     "podId": "pod-custom-headers-demo",
@@ -192,7 +192,7 @@
   },
   {
     "id": "custom-headers-get-call",
-    "type": "gateway-call",
+    "type": "pod-gateway-call",
     "z": "custom-headers-tab",
     "name": "Gateway Call: GET",
     "gateway": "custom-headers-gateway",
@@ -272,7 +272,7 @@
   },
   {
     "id": "custom-headers-post-call",
-    "type": "gateway-call",
+    "type": "pod-gateway-call",
     "z": "custom-headers-tab",
     "name": "Gateway Call: POST",
     "gateway": "custom-headers-gateway",

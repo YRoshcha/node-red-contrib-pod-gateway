@@ -43,5 +43,5 @@ module.exports = function (RED) {
     })
   }
 
-  RED.nodes.registerType('gateway-metrics', GatewayMetricsNode)
+  RED.nodes.registerType('pod-gateway-metrics', GatewayMetricsNode)
 }

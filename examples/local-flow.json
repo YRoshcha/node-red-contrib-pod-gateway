@@ -8,7 +8,7 @@
   },
   {
     "id": "local-demo-connector",
-    "type": "gateway-config",
+    "type": "pod-gateway-config",
     "name": "Local Gateway connector",
     "url": "ws://127.0.0.1:8080/ws",
     "podId": "pod-local-demo",
@@ -36,7 +36,7 @@
   },
   {
     "id": "local-call",
-    "type": "gateway-call",
+    "type": "pod-gateway-call",
     "z": "local-demo-tab",
     "name": "Gateway Call · demo/echo",
     "gateway": "local-demo-connector",
@@ -100,7 +100,7 @@
   },
   {
     "id": "local-out",
-    "type": "gateway-out",
+    "type": "pod-gateway-out",
     "z": "local-demo-tab",
     "name": "Gateway Out · demo/echo",
     "gateway": "local-demo-connector",
@@ -147,7 +147,7 @@
   },
   {
     "id": "local-in",
-    "type": "gateway-in",
+    "type": "pod-gateway-in",
     "z": "local-demo-tab",
     "name": "Gateway In · async result",
     "gateway": "local-demo-connector",

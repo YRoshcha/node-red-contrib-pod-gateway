@@ -1,4 +1,4 @@
-<script type="text/x-red" data-template-name="gateway-in">
+<script type="text/x-red" data-template-name="pod-gateway-in">
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Readable node name">
@@ -19,19 +19,19 @@
     </div>
 </script>
 
-<script type="text/x-red" data-help-name="gateway-in">
+<script type="text/x-red" data-help-name="pod-gateway-in">
     <p>Receives asynchronous results, callbacks and events from the central gateway.</p>
     <p>Leave the filter empty to receive all gateway messages for this POD.</p>
     <p>For adapter results, <code>msg._request.output.statusCode</code> contains the upstream HTTP status and <code>msg._request.output.body</code> contains the response body.</p>
 </script>
 
 <script type="text/javascript">
-    RED.nodes.registerType('gateway-in', {
+    RED.nodes.registerType('pod-gateway-in', {
         category: 'POD Gateway',
         color: '#d7e8f5',
         defaults: {
             name: { value: '' },
-            gateway: { type: 'gateway-config', required: true },
+            gateway: { type: 'pod-gateway-config', required: true },
             event: { value: '' }
         },
         inputs: 0,

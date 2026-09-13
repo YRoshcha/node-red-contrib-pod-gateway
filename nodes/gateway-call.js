@@ -115,5 +115,5 @@ module.exports = function (RED) {
     })
   }
 
-  RED.nodes.registerType('gateway-call', GatewayCallNode)
+  RED.nodes.registerType('pod-gateway-call', GatewayCallNode)
 }

@@ -93,5 +93,5 @@ module.exports = function (RED) {
     })
   }
 
-  RED.nodes.registerType('gateway-out', GatewayOutNode)
+  RED.nodes.registerType('pod-gateway-out', GatewayOutNode)
 }

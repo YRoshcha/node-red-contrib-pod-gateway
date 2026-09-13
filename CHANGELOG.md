@@ -1,5 +1,33 @@
 # Changelog
 
+## 2.0.0 — 2026-09-13
+
+Breaking change: node type identifiers renamed.
+
+- all 8 node types renamed from the `gateway-*` prefix to `pod-gateway-*`
+  (`gateway-config` -> `pod-gateway-config`, `gateway-server-config` ->
+  `pod-gateway-server-config`, `gateway-api-config` -> `pod-gateway-api-config`,
+  `gateway-adapter` -> `pod-gateway-adapter`, `gateway-in` -> `pod-gateway-in`,
+  `gateway-out` -> `pod-gateway-out`, `gateway-call` -> `pod-gateway-call`,
+  `gateway-metrics` -> `pod-gateway-metrics`). The flows.nodered.org scorecard
+  flags this package's plain `gateway-*` types as colliding with unrelated
+  types registered by `@smappee/node-red-contrib-smappee` and
+  `@smappee/node-red-contrib-smappee-knx` (both ship a node literally typed
+  `gateway`); the previous 1.0.1 entry below explains why this was initially
+  left alone, but a firmer prefix removes the ambiguity for good instead of
+  relying on exact-string non-collision.
+- **Upgrading from 1.0.x**: any existing flow using these nodes will show
+  "unknown node type" after upgrading until it is re-deployed with the new
+  node palette. There is no automatic migration -- open each affected tab,
+  the renamed nodes will need re-adding (config nodes in particular are
+  matched by type, so a `gateway-config` reference cannot resolve to a
+  `pod-gateway-config` instance automatically). Given how recent 1.0.0/1.0.1
+  are and their minimal adoption, this is done now rather than later once
+  more flows depend on the old names.
+- module file paths (`nodes/gateway-adapter.js`, etc.) are unchanged; only
+  the registered type strings and the `node-red.nodes` map keys in
+  package.json moved.
+
 ## 1.0.2 — 2026-09-13
 
 License change, no functional or protocol changes.

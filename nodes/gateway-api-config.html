@@ -1,4 +1,4 @@
-<script type="text/x-red" data-template-name="gateway-api-config">
+<script type="text/x-red" data-template-name="pod-gateway-api-config">
     <div class="form-row">
         <label for="node-config-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-config-input-name" placeholder="External API">
@@ -26,14 +26,14 @@
     </div>
 </script>
 
-<script type="text/x-red" data-help-name="gateway-api-config">
+<script type="text/x-red" data-help-name="pod-gateway-api-config">
     <p>Reusable upstream API settings for Gateway Adapter nodes.</p>
     <p>Keep the base URL, common headers and API key here. Each Gateway Adapter then needs only an operation path and HTTP method.</p>
     <p>The API key is stored in Node-RED credentials and is never sent to POD clients.</p>
 </script>
 
 <script type="text/javascript">
-    RED.nodes.registerType('gateway-api-config', {
+    RED.nodes.registerType('pod-gateway-api-config', {
         category: 'config',
         defaults: {
             name: { value: '' },

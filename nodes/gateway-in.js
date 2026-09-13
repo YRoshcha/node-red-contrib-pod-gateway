@@ -50,5 +50,5 @@ module.exports = function (RED) {
     })
   }
 
-  RED.nodes.registerType('gateway-in', GatewayInNode)
+  RED.nodes.registerType('pod-gateway-in', GatewayInNode)
 }

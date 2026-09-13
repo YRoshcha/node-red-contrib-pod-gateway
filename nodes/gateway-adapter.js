@@ -96,7 +96,7 @@ module.exports = function (RED) {
     })
   }
 
-  RED.nodes.registerType('gateway-adapter', GatewayAdapterNode)
+  RED.nodes.registerType('pod-gateway-adapter', GatewayAdapterNode)
 }
 
 function parseRateLimit (config) {

@@ -49,7 +49,7 @@ module.exports = function (RED) {
     })
   }
 
-  RED.nodes.registerType('gateway-config', GatewayConfigNode, {
+  RED.nodes.registerType('pod-gateway-config', GatewayConfigNode, {
     credentials: {
       token: { type: 'password' }
     }

@@ -1,4 +1,4 @@
-<script type="text/x-red" data-template-name="gateway-out">
+<script type="text/x-red" data-template-name="pod-gateway-out">
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Readable node name">
@@ -30,19 +30,19 @@
     </div>
 </script>
 
-<script type="text/x-red" data-help-name="gateway-out">
+<script type="text/x-red" data-help-name="pod-gateway-out">
     <p>Sends an asynchronous operation to the central gateway. The first output means the gateway accepted the task; the second output is a delivery error.</p>
     <p>Use Gateway In to receive a later result or event.</p>
     <p>Use the same optional <code>msg._request</code> contract as Gateway Call. Safe dynamic headers support templates such as <code>Bearer {{payload.accessToken}}</code>; protected credentials stay in the Gateway API Config. The accepted message keeps the input envelope; Gateway In forwards it with the eventual response status and body.</p>
 </script>
 
 <script type="text/javascript">
-    RED.nodes.registerType('gateway-out', {
+    RED.nodes.registerType('pod-gateway-out', {
         category: 'POD Gateway',
         color: '#d7e8f5',
         defaults: {
             name: { value: '' },
-            gateway: { type: 'gateway-config', required: true },
+            gateway: { type: 'pod-gateway-config', required: true },
             operation: { value: '', required: true },
             priority: { value: 'bulk' },
             acceptTimeout: { value: 10000, validate: RED.validators.number() }

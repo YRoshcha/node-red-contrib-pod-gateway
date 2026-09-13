@@ -59,7 +59,7 @@ test('derives a claimIdleMs floor from the configured upstreamTimeoutMs (default
   t.after(stub.restore)
   const { RED, registered } = makeRED()
   registerGatewayServerConfig(RED)
-  const GatewayServerConfigNode = registered['gateway-server-config']
+  const GatewayServerConfigNode = registered['pod-gateway-server-config']
 
   const node = new GatewayServerConfigNode({ id: 'srv-default', port: 0 })
   t.after(() => node.server?.stop())
@@ -75,7 +75,7 @@ test('raises claimIdleMs above a configured upstreamTimeoutMs that would otherwi
   t.after(stub.restore)
   const { RED, registered } = makeRED()
   registerGatewayServerConfig(RED)
-  const GatewayServerConfigNode = registered['gateway-server-config']
+  const GatewayServerConfigNode = registered['pod-gateway-server-config']
 
   const node = new GatewayServerConfigNode({ id: 'srv-slow', port: 0, upstreamTimeoutMs: 150000 })
   t.after(() => node.server?.stop())

@@ -1,4 +1,4 @@
-<script type="text/x-red" data-template-name="gateway-call">
+<script type="text/x-red" data-template-name="pod-gateway-call">
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Readable node name">
@@ -34,7 +34,7 @@
     </div>
 </script>
 
-<script type="text/x-red" data-help-name="gateway-call">
+<script type="text/x-red" data-help-name="pod-gateway-call">
     <p>Calls a selected Gateway Adapter operation through the central gateway and waits for its result over the persistent WebSocket connection.</p>
     <p>The <b>Adapter / operation</b> dropdown is populated from gateway capabilities. Selecting an entry shows the adapter's HTTP method, path template and accepted request fields before you build the message. A manual field appears only when the gateway has no capabilities yet or the saved operation is not currently registered.</p>
     <p>Output 1 is the successful result. Output 2 is a normalized gateway or upstream error.</p>
@@ -44,12 +44,12 @@
 </script>
 
 <script type="text/javascript">
-    RED.nodes.registerType('gateway-call', {
+    RED.nodes.registerType('pod-gateway-call', {
         category: 'POD Gateway',
         color: '#d7e8f5',
         defaults: {
             name: { value: '' },
-            gateway: { type: 'gateway-config', required: true },
+            gateway: { type: 'pod-gateway-config', required: true },
             operation: { value: '', required: true },
             timeout: { value: 60000, validate: RED.validators.number() },
             priority: { value: 'normal' }

@@ -1,6 +1,6 @@
 {
   "name": "@yroshcha/node-red-contrib-pod-gateway",
-  "version": "1.0.2",
+  "version": "2.0.0",
   "description": "Node-RED nodes and a WebSocket gateway for centrally rate-limited upstream API calls",
   "main": "lib/index.js",
   "bin": {
@@ -43,14 +43,14 @@
   "node-red": {
     "version": ">=2.0.0",
     "nodes": {
-      "gateway-config": "nodes/gateway-config.js",
-      "gateway-server-config": "nodes/gateway-server-config.js",
-      "gateway-api-config": "nodes/gateway-api-config.js",
-      "gateway-adapter": "nodes/gateway-adapter.js",
-      "gateway-in": "nodes/gateway-in.js",
-      "gateway-out": "nodes/gateway-out.js",
-      "gateway-call": "nodes/gateway-call.js",
-      "gateway-metrics": "nodes/gateway-metrics.js"
+      "pod-gateway-config": "nodes/gateway-config.js",
+      "pod-gateway-server-config": "nodes/gateway-server-config.js",
+      "pod-gateway-api-config": "nodes/gateway-api-config.js",
+      "pod-gateway-adapter": "nodes/gateway-adapter.js",
+      "pod-gateway-in": "nodes/gateway-in.js",
+      "pod-gateway-out": "nodes/gateway-out.js",
+      "pod-gateway-call": "nodes/gateway-call.js",
+      "pod-gateway-metrics": "nodes/gateway-metrics.js"
     }
   },
   "repository": {

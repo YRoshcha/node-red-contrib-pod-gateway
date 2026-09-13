@@ -8,7 +8,7 @@
   },
   {
     "id": "central-server-config",
-    "type": "gateway-server-config",
+    "type": "pod-gateway-server-config",
     "name": "Central Gateway",
     "host": "0.0.0.0",
     "port": 8080,
@@ -30,7 +30,7 @@
   },
   {
     "id": "upstream-api",
-    "type": "gateway-api-config",
+    "type": "pod-gateway-api-config",
     "name": "External API",
     "baseUrl": "https://api.example.com",
     "headers": "{\"Accept\":\"application/json\"}",
@@ -40,7 +40,7 @@
   },
   {
     "id": "upstream-adapter",
-    "type": "gateway-adapter",
+    "type": "pod-gateway-adapter",
     "name": "External API request",
     "server": "central-server-config",
     "api": "upstream-api",

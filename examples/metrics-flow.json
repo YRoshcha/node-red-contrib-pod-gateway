@@ -8,7 +8,7 @@
   },
   {
     "id": "metrics-demo-server",
-    "type": "gateway-server-config",
+    "type": "pod-gateway-server-config",
     "name": "Central Gateway + Redis",
     "host": "0.0.0.0",
     "port": 8080,
@@ -30,7 +30,7 @@
   },
   {
     "id": "metrics-demo-api",
-    "type": "gateway-api-config",
+    "type": "pod-gateway-api-config",
     "name": "Open-Meteo public API",
     "baseUrl": "https://api.open-meteo.com",
     "headers": "{\"Accept\":\"application/json\"}",
@@ -40,7 +40,7 @@
   },
   {
     "id": "metrics-demo-adapter",
-    "type": "gateway-adapter",
+    "type": "pod-gateway-adapter",
     "name": "GET Kyiv weather",
     "server": "metrics-demo-server",
     "api": "metrics-demo-api",
@@ -54,7 +54,7 @@
   },
   {
     "id": "metrics-demo-connector",
-    "type": "gateway-config",
+    "type": "pod-gateway-config",
     "name": "Local POD connector",
     "url": "ws://127.0.0.1:8080/ws",
     "podId": "pod-metrics-demo",
@@ -82,7 +82,7 @@
   },
   {
     "id": "metrics-demo-call",
-    "type": "gateway-call",
+    "type": "pod-gateway-call",
     "z": "metrics-demo-tab",
     "name": "Gateway Call: Open-Meteo",
     "gateway": "metrics-demo-connector",
@@ -129,7 +129,7 @@
   },
   {
     "id": "metrics-demo-output",
-    "type": "gateway-metrics",
+    "type": "pod-gateway-metrics",
     "z": "metrics-demo-tab",
     "name": "Gateway Metrics → connect palette here",
     "server": "metrics-demo-server",
@@ -190,7 +190,7 @@
   },
   {
     "id": "metrics-demo-upstream-output",
-    "type": "gateway-metrics",
+    "type": "pod-gateway-metrics",
     "z": "metrics-demo-tab",
     "name": "Gateway Metrics: upstream latency",
     "server": "metrics-demo-server",

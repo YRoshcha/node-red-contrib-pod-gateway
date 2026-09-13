@@ -1,4 +1,4 @@
-<script type="text/x-red" data-template-name="gateway-adapter">
+<script type="text/x-red" data-template-name="pod-gateway-adapter">
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Readable adapter name">
@@ -72,7 +72,7 @@
     </div>
 </script>
 
-<script type="text/x-red" data-help-name="gateway-adapter">
+<script type="text/x-red" data-help-name="pod-gateway-adapter">
     <p>Registers one upstream JSON API operation in the central Gateway Server.</p>
     <p>Pick a <b>Gateway API Config</b> to reuse the provider base URL and credentials, then enter only the API path.</p>
     <p>Enter a new unique <code>service/name</code> key here. The adapter's HTTP method, path and request contract are published to the Adapter / operation dropdown in Gateway Call.</p>
@@ -83,13 +83,13 @@
 </script>
 
 <script type="text/javascript">
-    RED.nodes.registerType('gateway-adapter', {
+    RED.nodes.registerType('pod-gateway-adapter', {
         category: 'POD Gateway',
         color: '#f3d6a2',
         defaults: {
             name: { value: '' },
-            server: { type: 'gateway-server-config', required: true },
-            api: { type: 'gateway-api-config' },
+            server: { type: 'pod-gateway-server-config', required: true },
+            api: { type: 'pod-gateway-api-config' },
             operation: { value: '', required: true },
             label: { value: '' },
             path: { value: '' },

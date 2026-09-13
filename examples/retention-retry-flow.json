@@ -8,7 +8,7 @@
   },
   {
     "id": "retention-retry-server",
-    "type": "gateway-server-config",
+    "type": "pod-gateway-server-config",
     "name": "Central Gateway · dev.29",
     "host": "0.0.0.0",
     "port": 8080,
@@ -30,7 +30,7 @@
   },
   {
     "id": "retention-retry-api",
-    "type": "gateway-api-config",
+    "type": "pod-gateway-api-config",
     "name": "Local echo API",
     "baseUrl": "http://127.0.0.1:1880",
     "headers": "{\"Accept\":\"application/json\"}",
@@ -40,7 +40,7 @@
   },
   {
     "id": "retention-retry-adapter",
-    "type": "gateway-adapter",
+    "type": "pod-gateway-adapter",
     "name": "Demo Echo Adapter",
     "server": "retention-retry-server",
     "api": "retention-retry-api",
@@ -102,7 +102,7 @@
   },
   {
     "id": "retention-retry-connector",
-    "type": "gateway-config",
+    "type": "pod-gateway-config",
     "name": "POD connector",
     "url": "ws://127.0.0.1:8080/ws",
     "podId": "pod-retention-retry-demo",
@@ -183,7 +183,7 @@
   },
   {
     "id": "retention-retry-call",
-    "type": "gateway-call",
+    "type": "pod-gateway-call",
     "z": "retention-retry-tab",
     "name": "Gateway Call · demo/echo",
     "gateway": "retention-retry-connector",
@@ -262,7 +262,7 @@
   },
   {
     "id": "retention-retry-out",
-    "type": "gateway-out",
+    "type": "pod-gateway-out",
     "z": "retention-retry-tab",
     "name": "Gateway Out · demo/echo",
     "gateway": "retention-retry-connector",
@@ -316,7 +316,7 @@
   },
   {
     "id": "retention-retry-in",
-    "type": "gateway-in",
+    "type": "pod-gateway-in",
     "z": "retention-retry-tab",
     "name": "Gateway In · demo/echo",
     "gateway": "retention-retry-connector",
@@ -348,7 +348,7 @@
   },
   {
     "id": "retention-retry-metrics",
-    "type": "gateway-metrics",
+    "type": "pod-gateway-metrics",
     "z": "retention-retry-tab",
     "name": "Gateway metrics",
     "server": "retention-retry-server",

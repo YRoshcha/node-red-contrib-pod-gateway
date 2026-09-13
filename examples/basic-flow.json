@@ -8,7 +8,7 @@
   },
   {
     "id": "basic-gateway",
-    "type": "gateway-config",
+    "type": "pod-gateway-config",
     "name": "Production Gateway",
     "url": "wss://gateway.example.com/ws",
     "podId": "pod-basic-demo",
@@ -36,7 +36,7 @@
   },
   {
     "id": "basic-call",
-    "type": "gateway-call",
+    "type": "pod-gateway-call",
     "z": "basic-demo-tab",
     "name": "Call external API",
     "gateway": "basic-gateway",

@@ -42,7 +42,7 @@ module.exports = function (RED) {
     }
   }
 
-  RED.nodes.registerType('gateway-api-config', GatewayApiConfigNode, {
+  RED.nodes.registerType('pod-gateway-api-config', GatewayApiConfigNode, {
     credentials: {
       apiKey: { type: 'password' }
     }
