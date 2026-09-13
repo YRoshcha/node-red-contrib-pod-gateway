@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.0.1 — 2026-09-13
+
+Metadata/packaging patch, no functional or protocol changes.
+
+- added `repository`, `bugs` and `homepage` to package.json now that the
+  source is public on GitHub;
+- declared `"node-red": {"version": ">=2.0.0"}` compatibility (verified
+  live against Node-RED 5.0.7; no version-specific APIs are used, so the
+  floor is set conservatively rather than to the exact tested version);
+- bumped the `ws` dependency range to `^8.21.3` (latest 8.x patch; no
+  breaking changes). `redis` stays on `^4.7.0` for now -- node-redis 5/6
+  changed parts of the client API and deserve their own compatibility pass
+  before bumping a major version, not a metadata-only patch.
+- Node type names (`gateway-*`) were flagged by the Flow Library scorecard
+  as overlapping with other modules that also register a node literally
+  called `gateway` (e.g. @smappee/node-red-contrib-smappee-knx). Node-RED
+  resolves node types by their exact registered string, so `gateway` and
+  `gateway-adapter` are different identifiers and do not collide at
+  runtime; renaming our 8 already-published node types now would break
+  every flow built against 1.0.0, so this is left as-is.
+
 ## 1.0.0 — 2026-09-10
 
 First stable release: a central WebSocket gateway for Node-RED PODs, backed by

@@ -1,6 +1,6 @@
 {
   "name": "@yroshcha/node-red-contrib-pod-gateway",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Node-RED nodes and a WebSocket gateway for centrally rate-limited upstream API calls",
   "main": "lib/index.js",
   "bin": {
@@ -38,9 +38,10 @@
   },
   "dependencies": {
     "redis": "^4.7.0",
-    "ws": "^8.18.0"
+    "ws": "^8.21.3"
   },
   "node-red": {
+    "version": ">=2.0.0",
     "nodes": {
       "gateway-config": "nodes/gateway-config.js",
       "gateway-server-config": "nodes/gateway-server-config.js",
@@ -51,5 +52,13 @@
       "gateway-call": "nodes/gateway-call.js",
       "gateway-metrics": "nodes/gateway-metrics.js"
     }
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YRoshcha/node-red-contrib-pod-gateway.git"
+  },
+  "bugs": {
+    "url": "https://github.com/YRoshcha/node-red-contrib-pod-gateway/issues"
+  },
+  "homepage": "https://github.com/YRoshcha/node-red-contrib-pod-gateway#readme"
 }
