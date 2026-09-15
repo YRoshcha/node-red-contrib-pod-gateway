@@ -76,23 +76,23 @@ module.exports = function (RED) {
     if (buildUrl) adapterOptions.buildUrl = buildUrl
     else adapterOptions.url = url
 
-    node.ready = server.registerOperation(config.operation, createJsonHttpAdapter(adapterOptions), metadata).then(() => {
+    try {
+      server.registerOperation(config.operation, createJsonHttpAdapter(adapterOptions), metadata)
       node.status({ fill: 'green', shape: 'dot', text: 'registered' })
-    }).catch(error => {
+      node.ready = Promise.resolve()
+    } catch (error) {
       node.status({ fill: 'red', shape: 'ring', text: 'registration failed' })
       node.error(`Gateway adapter registration failed: ${error.message}`)
-      // The server config reports the startup error. Do not leave an
-      // unhandled rejection that could terminate the Node-RED process.
-      return false
-    })
+      node.ready = Promise.resolve(false)
+    }
 
-    node.on('close', async (_removed, done) => {
+    node.on('close', (_removed, done) => {
       try {
-        await node.ready.catch(() => {})
-        await server.unregisterOperation(config.operation).catch(() => {})
-      } finally {
-        if (typeof done === 'function') done()
+        server.unregisterOperation(config.operation)
+      } catch (error) {
+        // Already gone (e.g. server itself shutting down) -- nothing to do.
       }
+      if (typeof done === 'function') done()
     })
   }
 
