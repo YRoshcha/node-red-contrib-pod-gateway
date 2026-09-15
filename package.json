@@ -1,6 +1,6 @@
 {
   "name": "@yroshcha/node-red-contrib-pod-gateway",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Node-RED nodes and a WebSocket gateway for centrally rate-limited upstream API calls",
   "main": "lib/index.js",
   "bin": {
