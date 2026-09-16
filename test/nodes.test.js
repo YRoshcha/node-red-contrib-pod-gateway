@@ -19,6 +19,12 @@ function makeRED (nodes = {}) {
         node.status = value => statuses.push({ id: node.id, value })
         node.error = value => errors.push({ id: node.id, value })
         node.send = message => sent.push(message)
+        // Tests that need {{global.x}} header resolution pass a plain
+        // `globalContext` object in the node config; everything else gets
+        // an always-empty global context, matching a real deploy with no
+        // global context configured.
+        const globalStore = config.globalContext || {}
+        node.context = () => ({ global: { get: name => globalStore[name] } })
       },
       registerType: (name, constructor) => { registered[name] = constructor },
       getNode: id => nodes[id]
@@ -341,6 +347,304 @@ test('Gateway Adapter resolves payload variables in an API path per request', as
   })
   assert.deepEqual(result, { ok: true })
   assert.equal(requestUrl, 'https://api.example.test/v1/riders/rider%2F42')
+  node.emit('close', false, () => {})
+})
+
+test('Gateway Adapter resolves {{global.x}} in API config and adapter headers per request', async t => {
+  const originalFetch = global.fetch
+  t.after(() => { global.fetch = originalFetch })
+  let sentHeaders
+  global.fetch = async (url, options) => {
+    sentHeaders = options.headers
+    return {
+      ok: true,
+      status: 200,
+      headers: { get: () => 'application/json' },
+      async json () { return { ok: true } },
+      async text () { return '{"ok":true}' }
+    }
+  }
+  const registrations = []
+  const server = {
+    logger: { debug: () => {}, error: () => {} },
+    registerOperation: async (...args) => registrations.push(args),
+    unregisterOperation: async () => {}
+  }
+  // Mirrors the real Gateway API Config merge: its own headers first, then
+  // the adapter's own headers layered on top -- both may carry templates.
+  const api = {
+    buildRequestOptions: (path, headers) => ({
+      url: `https://api.example.test${path}`,
+      headers: { 'X-Tenant': '{{global.tenantId}}', ...headers }
+    })
+  }
+  const RED = makeRED({ server, api })
+  require('../nodes/gateway-adapter')(RED)
+  const node = new RED.registered['pod-gateway-adapter']({
+    id: 'adapter-global-header',
+    server: 'server',
+    api: 'api',
+    operation: 'demo/withGlobalAuth',
+    path: '/echo',
+    method: 'POST',
+    headers: '{"Authorization":"Bearer {{global.apiToken}}"}',
+    globalContext: { apiToken: 'g-secret-token', tenantId: 'tenant-9' }
+  })
+  await node.ready
+  await registrations[0][1]({ ok: true }, { requestId: 'req-global', signal: new AbortController().signal })
+  assert.equal(sentHeaders.Authorization, 'Bearer g-secret-token')
+  assert.equal(sentHeaders['X-Tenant'], 'tenant-9')
+  node.emit('close', false, () => {})
+})
+
+test('Gateway Adapter surfaces a missing {{global.x}} header variable as a non-retryable gateway error', async t => {
+  const originalFetch = global.fetch
+  t.after(() => { global.fetch = originalFetch })
+  global.fetch = async () => { throw new Error('fetch should not be called') }
+  const registrations = []
+  const server = {
+    logger: { debug: () => {}, error: () => {} },
+    registerOperation: async (...args) => registrations.push(args),
+    unregisterOperation: async () => {}
+  }
+  const api = { buildRequestOptions: (path, headers) => ({ url: `https://api.example.test${path}`, headers: { ...headers } }) }
+  const RED = makeRED({ server, api })
+  require('../nodes/gateway-adapter')(RED)
+  const node = new RED.registered['pod-gateway-adapter']({
+    id: 'adapter-missing-global',
+    server: 'server',
+    api: 'api',
+    operation: 'demo/missingAuth',
+    path: '/echo',
+    method: 'POST',
+    headers: '{"Authorization":"Bearer {{global.apiToken}}"}'
+    // no globalContext configured -> global.apiToken is undefined
+  })
+  await node.ready
+  await assert.rejects(
+    registrations[0][1]({ ok: true }, { requestId: 'req-missing', signal: new AbortController().signal }),
+    error => error.code === 'INVALID_HEADER_TEMPLATE' && error.retryable === false
+  )
+  node.emit('close', false, () => {})
+})
+
+test('Gateway Adapter leaves headers static (no per-request resolver) when none contain a template', async t => {
+  const originalFetch = global.fetch
+  t.after(() => { global.fetch = originalFetch })
+  let sentHeaders
+  global.fetch = async (url, options) => {
+    sentHeaders = options.headers
+    return {
+      ok: true,
+      status: 200,
+      headers: { get: () => 'application/json' },
+      async json () { return { ok: true } },
+      async text () { return '{"ok":true}' }
+    }
+  }
+  const registrations = []
+  const server = {
+    logger: { debug: () => {}, error: () => {} },
+    registerOperation: async (...args) => registrations.push(args),
+    unregisterOperation: async () => {}
+  }
+  const api = { buildRequestOptions: (path, headers) => ({ url: `https://api.example.test${path}`, headers: { ...headers, 'X-Static': '1' } }) }
+  const RED = makeRED({ server, api })
+  require('../nodes/gateway-adapter')(RED)
+  const node = new RED.registered['pod-gateway-adapter']({
+    id: 'adapter-static-headers', server: 'server', api: 'api', operation: 'demo/static', path: '/echo', method: 'POST', headers: '{}'
+  })
+  await node.ready
+  await registrations[0][1]({ ok: true }, { requestId: 'req-static', signal: new AbortController().signal })
+  assert.equal(sentHeaders['X-Static'], '1')
+  node.emit('close', false, () => {})
+})
+
+test('Header priority: _request overrides Adapter, Adapter overrides API Config', async t => {
+  const originalFetch = global.fetch
+  t.after(() => { global.fetch = originalFetch })
+  let sentHeaders
+  global.fetch = async (url, options) => {
+    sentHeaders = options.headers
+    return {
+      ok: true,
+      status: 200,
+      headers: { get: () => 'application/json' },
+      async json () { return { ok: true } },
+      async text () { return '{"ok":true}' }
+    }
+  }
+  const registrations = []
+  const server = {
+    logger: { debug: () => {}, error: () => {} },
+    registerOperation: async (...args) => registrations.push(args),
+    unregisterOperation: async () => {}
+  }
+  // API Config sets X-Source and X-Api-Only; Adapter headers are merged in
+  // on top of that (mirrors lib/api-config.js#requestOptions), so X-Source
+  // is already 'adapter' by the time createJsonHttpAdapter sees it -- this
+  // matches how nodes/gateway-api-config.js + nodes/gateway-adapter.js
+  // actually merge in production, not a simplified stand-in.
+  const api = {
+    buildRequestOptions: (path, headers) => ({
+      url: `https://api.example.test${path}`,
+      headers: { 'X-Source': 'api-config', 'X-Api-Only': 'api', ...headers }
+    })
+  }
+  const RED = makeRED({ server, api })
+  require('../nodes/gateway-adapter')(RED)
+  const node = new RED.registered['pod-gateway-adapter']({
+    id: 'adapter-header-priority',
+    server: 'server',
+    api: 'api',
+    operation: 'demo/headerPriority',
+    path: '/echo',
+    method: 'POST',
+    // Adapter's own header: overrides API Config's X-Source, adds its own.
+    headers: '{"X-Source":"adapter","X-Adapter-Only":"adapter"}'
+  })
+  await node.ready
+  // A POD's _request.headers is merged last, in lib/http-adapter.js, after
+  // the config-level headers this test's registrations[0][1] already
+  // carries baked in -- so it overrides both config layers.
+  await registrations[0][1](
+    { ok: true },
+    {
+      requestId: 'req-priority',
+      signal: new AbortController().signal,
+      request: { headers: { 'X-Source': 'pod', 'X-Pod-Only': 'pod' } }
+    }
+  )
+  assert.equal(sentHeaders['X-Source'], 'pod') // _request wins over both config levels
+  assert.equal(sentHeaders['X-Api-Only'], 'api') // untouched by adapter or _request
+  assert.equal(sentHeaders['X-Adapter-Only'], 'adapter') // untouched by _request, but set by adapter over API Config's absence
+  assert.equal(sentHeaders['X-Pod-Only'], 'pod') // only _request sets this one
+  node.emit('close', false, () => {})
+})
+
+test('Header priority holds with {{global.x}} templates: _request still wins, template still resolves at the layer below it', async t => {
+  const originalFetch = global.fetch
+  t.after(() => { global.fetch = originalFetch })
+  let sentHeaders
+  global.fetch = async (url, options) => {
+    sentHeaders = options.headers
+    return {
+      ok: true,
+      status: 200,
+      headers: { get: () => 'application/json' },
+      async json () { return { ok: true } },
+      async text () { return '{"ok":true}' }
+    }
+  }
+  const registrations = []
+  const server = {
+    logger: { debug: () => {}, error: () => {} },
+    registerOperation: async (...args) => registrations.push(args),
+    unregisterOperation: async () => {}
+  }
+  const api = {
+    buildRequestOptions: (path, headers) => ({
+      url: `https://api.example.test${path}`,
+      headers: { 'X-Session': 'Bearer {{global.apiToken}}', ...headers }
+    })
+  }
+  const RED = makeRED({ server, api })
+  require('../nodes/gateway-adapter')(RED)
+  const node = new RED.registered['pod-gateway-adapter']({
+    id: 'adapter-priority-with-global',
+    server: 'server',
+    api: 'api',
+    operation: 'demo/priorityWithGlobal',
+    path: '/echo',
+    method: 'POST',
+    headers: '{}',
+    globalContext: { apiToken: 'g-secret' }
+  })
+  await node.ready
+  // Case 1: POD sends no X-Session -> the API Config's {{global.x}} value resolves through.
+  await registrations[0][1]({ ok: true }, { requestId: 'req-1', signal: new AbortController().signal })
+  assert.equal(sentHeaders['X-Session'], 'Bearer g-secret')
+  // Case 2: a POD's own X-Session still wins. Note this would NOT hold for
+  // Authorization, Cookie, Host or the other names on request-contract.js's
+  // static PROTECTED_HEADERS list -- those are unconditionally controlled
+  // by config (adapter/API Config), never overridable from a POD, by
+  // design, regardless of whether an apiKeyHeader is configured. The
+  // _request > adapter > API Config priority this test checks applies to
+  // ordinary, non-credential header names.
+  await registrations[0][1](
+    { ok: true },
+    { requestId: 'req-2', signal: new AbortController().signal, request: { headers: { 'X-Session': 'Bearer pod-token' } } }
+  )
+  assert.equal(sentHeaders['X-Session'], 'Bearer pod-token')
+  node.emit('close', false, () => {})
+})
+
+test('Authorization from {{global.apiToken}} at API Config level: resolves per request, and a POD cannot override it', async t => {
+  const originalFetch = global.fetch
+  t.after(() => { global.fetch = originalFetch })
+  let sentHeaders
+  global.fetch = async (url, options) => {
+    sentHeaders = options.headers
+    return {
+      ok: true,
+      status: 200,
+      headers: { get: () => 'application/json' },
+      async json () { return { ok: true } },
+      async text () { return '{"ok":true}' }
+    }
+  }
+  const registrations = []
+  const server = {
+    logger: { debug: () => {}, error: () => {} },
+    registerOperation: async (...args) => registrations.push(args),
+    unregisterOperation: async () => {}
+  }
+  // This is the motivating case for {{global.x}}: a token refreshed by
+  // another flow into global context, forwarded upstream as Authorization
+  // from the API Config -- exactly the header a POD's own _request.headers
+  // could never carry, since Authorization is unconditionally on
+  // request-contract.js's static PROTECTED_HEADERS list.
+  const api = {
+    buildRequestOptions: (path, headers) => ({
+      url: `https://api.example.test${path}`,
+      headers: { Authorization: 'Bearer {{global.apiToken}}', ...headers }
+    })
+  }
+  const RED = makeRED({ server, api })
+  require('../nodes/gateway-adapter')(RED)
+  const globalContext = { apiToken: 'first-token' }
+  const node = new RED.registered['pod-gateway-adapter']({
+    id: 'adapter-auth-from-global',
+    server: 'server',
+    api: 'api',
+    operation: 'demo/authFromGlobal',
+    path: '/echo',
+    method: 'POST',
+    headers: '{}',
+    globalContext
+  })
+  await node.ready
+
+  // Resolves fresh from global context on every call -- not baked in once
+  // at deploy -- so a token refreshed mid-flow by another part of the flow
+  // (e.g. an OAuth refresh timer writing to the same global context key)
+  // takes effect on the very next request with no redeploy.
+  await registrations[0][1]({ ok: true }, { requestId: 'req-auth-1', signal: new AbortController().signal })
+  assert.equal(sentHeaders.Authorization, 'Bearer first-token')
+
+  globalContext.apiToken = 'refreshed-token'
+  await registrations[0][1]({ ok: true }, { requestId: 'req-auth-2', signal: new AbortController().signal })
+  assert.equal(sentHeaders.Authorization, 'Bearer refreshed-token')
+
+  // A POD trying to send its own Authorization is silently dropped by
+  // requestHeaders() (lib/request-contract.js), regardless of priority --
+  // the API Config's resolved value stands.
+  await registrations[0][1](
+    { ok: true },
+    { requestId: 'req-auth-3', signal: new AbortController().signal, request: { headers: { Authorization: 'Bearer pod-supplied' } } }
+  )
+  assert.equal(sentHeaders.Authorization, 'Bearer refreshed-token')
+
   node.emit('close', false, () => {})
 })
 

@@ -24,6 +24,29 @@ test('resolves header templates without URL encoding', () => {
   )
 })
 
+test('resolves global context values in headers (adapter/API config use case)', () => {
+  const global = new Proxy({}, { get: (_t, name) => ({ apiToken: 'g-secret', tenant: { id: 't-9' } })[name] })
+  assert.equal(
+    resolveHeaderTemplate('Bearer {{global.apiToken}}', {}, { global }),
+    'Bearer g-secret'
+  )
+  assert.equal(
+    resolveHeaderTemplate('{{global.tenant.id}}', {}, { global }),
+    't-9'
+  )
+})
+
+test('rejects a missing global template variable and an unknown template root', () => {
+  assert.throws(
+    () => resolveHeaderTemplate('Bearer {{global.missing}}', {}, { global: {} }),
+    error => error.code === 'INVALID_HEADER_TEMPLATE' && /missing/.test(error.message)
+  )
+  assert.throws(
+    () => resolveHeaderTemplate('{{env.HOME}}', {}, {}),
+    error => error.code === 'INVALID_HEADER_TEMPLATE' && /not supported.*global/.test(error.message)
+  )
+})
+
 test('rejects missing or unsafe dynamic header values', () => {
   assert.throws(
     () => resolveHeaderTemplate('Bearer {{payload.token}}', {}, {}),

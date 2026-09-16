@@ -1,5 +1,38 @@
 # Changelog
 
+## 2.0.5 — 2026-09-16
+
+Bug fix and a new templating capability, no breaking changes.
+
+- **Fixed:** `msg._request` built as a plain object literal inside a Node-RED
+  Function node was incorrectly rejected with `_request must be an object`
+  (`REQUEST_VALIDATION_FAILED`). Function nodes run user code in a separate
+  vm context/realm, so an object literal created there has a *different*
+  `Object.prototype` reference than the main Node-RED process; the previous
+  check compared prototypes with strict `===` and failed for any such
+  object, regardless of its contents. `isPlainObject` (`lib/request-contract.js`)
+  now detects plain objects with `Object.prototype.toString.call(value) ===
+  '[object Object]'`, which is realm-independent. A `msg._request` built with
+  a **Change** node (JSON/JSONata) was never affected, since those evaluate
+  in the main process.
+- **Added:** Gateway API Config and Gateway Adapter headers can now use the
+  same `{{...}}` template syntax as `_request.headers`, plus a new `global`
+  root that reads Node-RED's global context: `{{global.apiToken}}`,
+  `{{global.tenant.id}}`. Unlike `_request.headers`, this is operator-authored
+  config, so there is no protected-header restriction -- a credential can
+  legitimately live behind `{{global.apiToken}}`, refreshed by another flow
+  that writes to the same global context key. `{{payload.x}}` and
+  `{{request.x}}` also work here, matching `_request.headers`. Headers with
+  no template are unaffected and stay static, resolved once at deploy as
+  before; a missing or non-scalar `{{global.x}}` value fails the call with
+  `INVALID_HEADER_TEMPLATE` (non-retryable) rather than crashing the adapter.
+  Header priority for an ordinary (non-credential) header name set at more
+  than one level is unchanged and now has explicit test coverage:
+  `_request.headers` (POD) > Gateway Adapter > Gateway API Config, template
+  or not. Protected/credential header names (`Authorization`, `Cookie`,
+  `Host`, a configured `apiKeyHeader`, etc.) remain outside this order --
+  `_request.headers` can never set them, at any priority level.
+
 ## 2.0.0 — 2026-09-13
 
 Breaking change: node type identifiers renamed.

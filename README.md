@@ -108,6 +108,44 @@ Redis queue, global rate limiter and gateway authentication.
 Create one **Gateway API Config** per provider. It stores the provider base
 URL, common headers and API key in Node-RED credentials.
 
+A header value on **Gateway API Config** or **Gateway Adapter** may use the
+same `{{...}}` template syntax as `_request.headers` (see below), plus a
+`global` root for Node-RED's global context: `{{global.apiToken}}`,
+`{{global.tenant.id}}`. This is the place for a credential that a separate
+flow refreshes into global context, since these headers are operator config,
+not POD input -- there is no protected-header restriction here the way there
+is for `_request.headers`. `{{payload.x}}` and `{{request.x}}` also work,
+resolved per request from the same call that resolves `_request.headers`. A
+header with no `{{...}}` is unaffected and stays static, resolved once at
+deploy, exactly as before. A missing or non-scalar `{{global.x}}` value fails
+that call with `INVALID_HEADER_TEMPLATE` (non-retryable).
+
+The main use case is `Authorization` itself. It is unconditionally on the
+protected-header list (see below), so a POD's `_request.headers` can never
+carry it -- an upstream bearer token has to come from the API Config or
+Adapter. `{{global.apiToken}}` is what makes that workable when the token is
+short-lived: keep a separate flow (e.g. an OAuth refresh timer) writing the
+current token to global context, and set the **Gateway API Config** header
+to:
+
+```
+Authorization: Bearer {{global.apiToken}}
+```
+
+It is re-read from global context on every request, so a refreshed token
+takes effect on the next call with no redeploy of the Gateway Adapter.
+
+**Header priority**, highest first, for a header name set at more than one
+level: `_request.headers` (POD) > **Gateway Adapter** headers > **Gateway
+API Config** headers. This holds whether or not either config-level value
+uses a `{{...}}` template -- a template is just resolved before the merge,
+then the same last-value-wins order applies. The one exception is any
+protected/credential header (`Authorization`, `Cookie`, `Host`,
+`Content-Length`, `Proxy-Authorization`, `X-Api-Key`, `X-Auth-Token`,
+`X-Rapidapi-Key`, `Api-Key`, or a custom `apiKeyHeader`): those names are
+never settable from `_request.headers`, by design, so for them the priority
+is only Adapter > API Config, with no POD override at any priority level.
+
 Create one **Gateway Adapter** per operation. It reuses an API config and only
 needs an operation key, path and HTTP method:
 

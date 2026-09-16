@@ -3,7 +3,7 @@
 const assert = require('node:assert/strict')
 const test = require('node:test')
 const { EventEmitter } = require('node:events')
-const { operationFromNode, gatewayMeta, errorMessage, setConnectionStatus, closeListener } = require('../lib/node-utils')
+const { operationFromNode, gatewayMeta, errorMessage, setConnectionStatus, closeListener, globalContextAccessor } = require('../lib/node-utils')
 
 test('derives operations from node config or message metadata', () => {
   assert.deepEqual(operationFromNode({ operation: 'demo/echo' }, {}), { service: 'demo', operation: 'echo', value: 'demo/echo' })
@@ -28,6 +28,20 @@ test('maps client state to Node-RED status', () => {
   const node = { status: value => states.push(value) }
   for (const state of ['connecting', 'connected', 'reconnecting', 'disconnected', 'closed', 'unknown']) setConnectionStatus(node, state)
   assert.deepEqual(states.map(value => value.text), ['connecting', 'connected', 'reconnecting', 'disconnected', 'closed', 'disconnected'])
+})
+
+test('globalContextAccessor proxies top-level reads to global.get and indexes nested values normally', () => {
+  const store = { apiToken: 'secret-123', tenant: { id: 't-1' } }
+  const node = { context: () => ({ global: { get: name => store[name] } }) }
+  const accessor = globalContextAccessor(node)
+  assert.equal(accessor.apiToken, 'secret-123')
+  assert.equal(accessor.tenant.id, 't-1')
+  assert.equal(accessor.missing, undefined)
+})
+
+test('globalContextAccessor returns an empty, always-undefined view when the node has no context', () => {
+  assert.equal(globalContextAccessor(null).anything, undefined)
+  assert.equal(globalContextAccessor({}).anything, undefined)
 })
 
 test('closeListener removes listeners and calls Node-RED done callback', () => {

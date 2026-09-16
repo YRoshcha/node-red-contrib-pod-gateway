@@ -2,8 +2,9 @@
 
 const { createJsonHttpAdapter } = require('../lib/http-adapter')
 const { parseHeaders } = require('../lib/api-config')
-const { hasUrlTemplate, resolveUrlTemplate } = require('../lib/url-template')
+const { hasUrlTemplate, resolveUrlTemplate, resolveHeaderTemplate } = require('../lib/url-template')
 const { requestSchema } = require('../lib/request-contract')
+const { globalContextAccessor } = require('../lib/node-utils')
 
 module.exports = function (RED) {
   function GatewayAdapterNode (config) {
@@ -65,9 +66,23 @@ module.exports = function (RED) {
     }
     if (rateLimit) metadata.rateLimit = rateLimit
 
+    // API Config and Adapter headers are normally merged once, above, and
+    // stay static for the life of the deploy. A header value containing
+    // {{...}} (most usefully {{global.apiToken}}, but {{payload.x}} and
+    // {{request.x}} work the same as in _request.headers) instead needs to
+    // be resolved on every call, so it is not baked in at deploy time.
+    const headerTemplates = headers
+    const hasHeaderTemplates = Object.values(headerTemplates).some(
+      value => typeof value === 'string' && hasUrlTemplate(value)
+    )
+    const globalContext = hasHeaderTemplates ? globalContextAccessor(node) : null
+    const resolvedHeaders = hasHeaderTemplates
+      ? (payload, requestContext) => resolveConfigHeaders(headerTemplates, payload, requestContext, globalContext)
+      : headers
+
     const adapterOptions = {
       method: config.method || 'POST',
-      headers,
+      headers: resolvedHeaders,
       idempotencyHeader: config.idempotencyHeader || undefined,
       keepAlive: config.keepAlive !== false,
       logger: server.logger,
@@ -97,6 +112,27 @@ module.exports = function (RED) {
   }
 
   RED.nodes.registerType('pod-gateway-adapter', GatewayAdapterNode)
+}
+
+/**
+ * Resolve {{...}} templates in API Config / Adapter headers for one
+ * request. Unlike _request.headers from a POD, these are operator-authored
+ * config, not untrusted per-call input, so there is no protected-header
+ * list to enforce here -- an operator can legitimately put a credential
+ * behind {{global.apiToken}}. A missing or non-scalar variable fails the
+ * call with INVALID_HEADER_TEMPLATE (non-retryable) via the same error path
+ * as a bad _request.headers template, surfaced to the POD as a normal
+ * gateway error rather than crashing the adapter.
+ */
+function resolveConfigHeaders (headerTemplates, payload, requestContext, globalContext) {
+  const resolved = {}
+  const context = { ...requestContext, global: globalContext || {} }
+  for (const [key, value] of Object.entries(headerTemplates)) {
+    resolved[key] = typeof value === 'string' && hasUrlTemplate(value)
+      ? resolveHeaderTemplate(value, payload, context)
+      : value
+  }
+  return resolved
 }
 
 function parseRateLimit (config) {
