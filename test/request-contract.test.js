@@ -118,6 +118,42 @@ test('rejects a custom-named credential header when the schema declares it prote
   )
 })
 
+test('accepts _request built entirely inside a separate vm context/realm (Node-RED Function node)', () => {
+  // A Node-RED Function node runs user code in its own vm context, so a
+  // literal `{}` created there has a different Object.prototype reference
+  // than the main process running this validator -- even though it is
+  // otherwise a perfectly ordinary plain object. This is not only about
+  // the top-level _request: params, query, headers and body are each
+  // isPlainObject-checked individually (see lib/request-contract.js), so
+  // all four needed the fix, not just the wrapper object. Build every
+  // level of _request in the sandbox to cover all of them at once.
+  const vm = require('node:vm')
+  const sandbox = vm.createContext({})
+  const crossRealmRequest = vm.runInContext(`({
+    params: { id: 'rider-42' },
+    query: { include: 'profile' },
+    headers: { 'X-Correlation-ID': 'corr-1' },
+    body: { active: false }
+  })`, sandbox)
+
+  assert.notEqual(
+    Object.getPrototypeOf(crossRealmRequest),
+    Object.prototype,
+    'sanity check: the sandbox object must actually be a different realm, or this test proves nothing'
+  )
+
+  const schema = requestSchema('PUT', '/v1/riders/{{request.params.id}}')
+  const result = validateRequest({ id: 'rider-42', active: false }, crossRealmRequest, schema)
+  assert.equal(result.ok, true)
+  assert.deepEqual(result.errors, [])
+  assert.deepEqual(JSON.parse(JSON.stringify(result.request)), {
+    params: { id: 'rider-42' },
+    query: { include: 'profile' },
+    headers: { 'X-Correlation-ID': 'corr-1' },
+    body: { active: false }
+  })
+})
+
 test('rejects malformed and unsafe per-request overrides', () => {
   const schema = requestSchema('POST', '/v1/items')
   for (const value of [null, [], 'invalid']) {
